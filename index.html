@@ -1,0 +1,35 @@
+<!DOCTYPE html />
+<html>
+<head>
+<title>My JS Illustrator</title>
+<!--[if lte IE 8]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+<link rel="stylesheet" type="text/css" href="css/default.css" />
+<script type="text/javascript" src="js/selector.js"></script>
+<script type="text/javascript" src="js/lienzo.js"></script>
+<script type="text/javascript" src="js/default.js"></script>
+</head>
+<body id='mainBody'>
+	<!-- HEADER -->
+	<div id="toolbar">
+		<ul>
+			<li>
+				Tools
+				<ul>
+					<li id="selectionTool">Selection Tool</li>
+					<li id="directSelection">Direct Selection</li>
+					<li id="penTool">Pen Tool</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	<!-- BODY -->
+	<div id="content">
+		<div id="myCanvasContainer">
+			<canvas id="myCanvas"></canvas>
+		</div>
+		<div id="sidebar"></div>
+	</div>
+	<!-- FOOTER -->
+	<div id="statusbar"></div>
+</body>
+</html>
