@@ -1,19 +1,19 @@
-class selector {
-	constructor(attr,tags) {
-		if(Object.prototype.toString.call(tags) !== '[object Array]')
-			throw new Error('Whoops!, seems like your developer mess it up, this is not an Array.');
-		for(var iA=0,tagsLength=tags.length; iA<tagsLength; iA++) {
-			var tagElements = document.getElementsByTagName(tags[iA]);
-			for(var iB=0,tagElemLength=tagElements.length; iB<tagElemLength; iB++) {
-				var tagId = tagElements[iB].getAttribute(attr); 	
-				if(tagId) {
-					if(typeof this[tagId] === 'undefined'){
-						this[tagId] = tagElements[iB];
-					}else if(typeof this[tagId] === 'string'){
-						var tempSelectObj = [this[tagId],tagElements[iB]];
-						this[tagId] = tempSelectObj;
+class Selector {
+	constructor(atributo,etiquetas) {
+		if(Object.prototype.toString.call(etiquetas) !== '[object Array]')
+			throw new Error('Ups!, parece que tu desarrollador la rego, este no es un Array.');
+		for(var iA=0,numEtiquetas=etiquetas.length; iA<numEtiquetas; iA++) {
+			var listEtiquetas = document.getElementsByTagName(etiquetas[iA]);
+			for(var iB=0,numElementos=listEtiquetas.length; iB<numElementos; iB++) {
+				var idEtiqueta = listEtiquetas[iB].getAttribute(atributo); 	
+				if(idEtiqueta) {
+					if(typeof this[idEtiqueta] === 'undefined'){
+						this[idEtiqueta] = listEtiquetas[iB];
+					}else if(typeof this[idEtiqueta] === 'string'){
+						var temporal = [this[idEtiqueta],listEtiquetas[iB]];
+						this[idEtiqueta] = temporal;
 					}else{
-						this[tagId].push(tagElements[iB]);
+						this[idEtiqueta].push(listEtiquetas[iB]);
 					}
 				}
 			}

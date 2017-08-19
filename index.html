@@ -1,35 +1,35 @@
 <!DOCTYPE html />
 <html>
 <head>
-<title>My JS Illustrator</title>
+<title>Mi lienzo</title>
 <!--[if lte IE 8]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
 <link rel="stylesheet" type="text/css" href="css/default.css" />
 <script type="text/javascript" src="js/selector.js"></script>
-<script type="text/javascript" src="js/lienzo.js"></script>
-<script type="text/javascript" src="js/default.js"></script>
+<script type="text/javascript" src="js/serviciosLienzo.js"></script>
+<script type="text/javascript" src="js/funciones.js"></script>
 </head>
-<body id='mainBody'>
+<body id='cuerpo'>
 	<!-- HEADER -->
-	<div id="toolbar">
+	<div id="barraHerramientas">
 		<ul>
 			<li>
-				Tools
+				Herramientas
 				<ul>
-					<li id="selectionTool">Selection Tool</li>
-					<li id="directSelection">Direct Selection</li>
-					<li id="penTool">Pen Tool</li>
+					<li id="seleccion">Seleccion</li>
+					<li id="seleccionDirecta">Seleccion Directa</li>
+					<li id="pluma">Pluma</li>
 				</ul>
 			</li>
 		</ul>
 	</div>
 	<!-- BODY -->
-	<div id="content">
-		<div id="myCanvasContainer">
-			<canvas id="myCanvas"></canvas>
+	<div id="contenido">
+		<div id="contenedorLienzo">
+			<canvas id="lienzo"></canvas>
 		</div>
-		<div id="sidebar"></div>
+		<div id="barraLateral"></div>
 	</div>
 	<!-- FOOTER -->
-	<div id="statusbar"></div>
+	<div id="barraEstado"></div>
 </body>
 </html>
