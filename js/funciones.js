@@ -15,5 +15,5 @@ window.onload = function() {
 		'seleccion':seleccionar.seleccion,
 		'selecciondirecta':seleccionar.seleccionDirecta,
 		'pluma':seleccionar.pluma
-	});
+	},anchoVentana-40,altoVentana-80,seleccionar.barraEstado);
 };

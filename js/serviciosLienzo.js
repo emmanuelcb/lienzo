@@ -1,10 +1,8 @@
 class ServiciosLienzo {
-	constructor(lienzo,herramientas) {
+	constructor(lienzo,herramientas,ancho,alto,barraEstado) {
 		this.validarParametros(lienzo,herramientas);
-		this.inicializar();
-		this.lienzo = lienzo;
-		this.contexto = this.lienzo.getContext('2d');
-		this.herramientaActiva = this.herramientas.seleccion;
+		this.inicializar(lienzo,ancho,alto,barraEstado);
+		this.herramientaActiva = this.herramientas.pluma;
 		this.agregarEventos(herramientas);
 	}
 	validarParametros(lienzo,herramientas) {
@@ -13,28 +11,82 @@ class ServiciosLienzo {
 		if(Object.prototype.toString.call(herramientas) !== '[object Object]')
 			throw new Error('Ups!, parece que tu desarrollador la cago, este no es un Object.');
 	}
-	inicializar() {
+	inicializar(lienzo,ancho,alto,barraEstado) {
+		this.barraEstado = barraEstado;
+		this.ancho = ancho;
+		this.alto = alto;
+		this.lienzo = lienzo;
+		//this.lienzo.setAttribute('width',this.ancho);
+		//this.lienzo.setAttribute('height',this.alto);
+		this.contexto = this.lienzo.getContext('2d');
+		this.lienzo2 = document.createElement('canvas');
+		this.contexto2 = this.lienzo2.getContext('2d');
 		this.herramientasPermitidas = ['seleccion','selecciondirecta','pluma'];
 		this.herramientas = {
 			seleccion : {
 				valor: 0, 
 				nombre: 'Seleccion',
-				abajo: function(pos) {},
-				arriba: function() {}
+				abajo: function(este,pos) {},
+				arriba: function(este,evento) {}
 			},
 			selecciondirecta : {
 				valor: 1, 
 				nombre: 'Seleccion directa',
-				abajo: function(pos) {},
-				arriba: function() {}
+				abajo: function(este,pos) {
+					if(!este.trazoCurvo)
+						return false;
+					var activo = este.trazoCurvo.seleccionarPunto(pos);
+					if(activo) {
+						este.herramientaActiva = este.herramientas.mover;
+						este.lienzo.addEventListener('mousemove',este.actualizarSeleccion(este),false);
+						return true;
+					}
+					return false;
+				},
+				arriba: function(este,evento) {
+					este.lienzo.removeEventListener('mousemove',este.actualizarSeleccion(este),false);
+					este.trazoCurvo.limpiarSeleccion();
+				}
+			},
+			mover : {
+				valor: 2,
+				nombre: 'Mover',
+				abajo: function() {},
+				arriba:function(este,evento) {
+					este.lienzo.removeEventListener('mousemove',este.actualizarSeleccion(este),false);
+					este.trazoCurvo.limpiarSeleccion();
+					este.herramientaActiva = este.herramientas.selecciondirecta;
+				}
 			},
 			pluma : {
-				valor: 2,
+				valor: 3,
 				nombre: 'Pluma',
-				abajo: function(pos) {
-
+				abajo: function(este,pos) {
+					if(!este.trazoCurvo)
+						este.trazoCurvo = new TrazoCurvo(pos);
+					else {
+						if(este.herramientas.selecciondirecta.abajo(pos)) 
+							return;
+						este.trazoCurvo.agregarPunto(pos);
+					}
+					este.hacer();
 				},
-				arriba: function() {}
+				arriba: function(este,evento) {
+					este.lienzo.removeEventListener('mousemove',este.actualizarSeleccion(este),false);
+					este.trazoCurvo.limpiarSeleccion();
+				}
+			},
+			plumaEliminar : {
+				valor: 4,
+				nombre: 'Pluma eliminar puntos',
+				abajo: function(este,pos) {
+					if(!este.trazoCurvo)
+						return;
+					var eliminado = este.trazoCurvo.eliminarPunto(pos);
+					if(eliminado)
+						este.hacer();
+				},
+				arriba: function(este,evento) {}
 			}
 		}
 		this.atajos = {
@@ -60,47 +112,64 @@ class ServiciosLienzo {
 	}
 	agregaFuncion(esta,herramienta) {
 		var fn = function(evento){
-			console.log([evento]);
-			console.log([esta]);
+			//console.log([evento]);
+			//console.log([esta]);
 			esta.herramientaActiva = esta.herramientas[herramienta];
 		}
 		return fn;
 	}
 	obtenerRatonPosicion(evento) {
-		/*var x;
+		var x;
 		var y;
-		if (e.pageX != undefined && e.pageY != undefined) {
-			x = e.pageX;
-		y = e.pageY;
+		if (evento.pageX != undefined && evento.pageY != undefined) {
+			x = evento.pageX;
+			y = evento.pageY;
 		} else {
-			x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-			y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+			x = evento.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+			y = evento.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
-		x -= glienzo.offsetLeft;
-		y -= glienzo.offsetTop;
+		x -= this.lienzo.offsetLeft;
+		y -= this.lienzo.offsetTop;
 		
-		return new Point(x, y);*/
-	};
-	manejadorRatonPresionado(esta) {
+		return new Punto(x,y);
+	}
+	actualizarSeleccion(este) {
+		var actualizarSeleccionFn = function(evento) {
+			var pos = este.obtenerRatonPosicion(evento);
+			console.log(pos);
+			este.trazoCurvo.actualizarSeleccion(pos);
+			este.hacer();
+		};
+		return actualizarSeleccionFn;
+	}
+	manejadorRatonPresionado(este) {
 		var ratonPresionadoFn = function(evento){
-			console.log([evento]);
-			console.log([esta]); 
-			var pos = esta.obtenerRatonPosicion(evento);
-			esta.herramientaActiva.abajo(pos);
-		}
+			//console.log([evento]);
+			//console.log([este]); 
+			var pos = este.obtenerRatonPosicion(evento);
+			este.herramientaActiva.abajo(este,pos);
+		};
 		return ratonPresionadoFn;
-	};
-	manejadorRatonSuelto(esta) {
+	}
+	manejadorRatonSuelto(este) {
 		var ratonSueltoFn = function(evento){
-			console.log([evento]);
-			console.log([esta]);
-			var pos = esta.obtenerRatonPosicion(evento);
-			esta.herramientaActiva.arriba();
-		}
+			//console.log([evento]);
+			//console.log([este]);
+			este.herramientaActiva.arriba(este,evento);
+		};
 		return ratonSueltoFn;
 	}
+	hacer() {
+		this.contexto2.clearRect(0,0,this.ancho,this.alto);
+		this.contexto.clearRect(0,0,this.ancho,this.alto);
+		if(this.trazoCurvo) {
+			this.trazoCurvo.dibujar(this.contexto2);
+			//this.barraEstado.innerHTML = this.trazoCurvo.convertirATextoJS(); 
+		}
+		this.contexto.drawImage(this.lienzo2,0,0);
+	}
 }
-class Punto() {
+class Punto {
 	constructor(nuevoX,nuevoY) {
 		this.x = nuevoX;
 		this.y = nuevoY;
@@ -115,32 +184,32 @@ class Punto() {
 		ctx.fillRect(this.x-this.radio, this.y-this.radio, this.radio*2, this.radio*2);
 	}
 	calcularInclinacion(punto) {
-		return (punto.y()-this.y) / (punto.x()-this.x);
+		return (punto.y-this.y) / (punto.x-this.x);
 	}
 	contiene(punto) {
-		var xEnRango = punto.x() >= this.x-this.radioActivo && punto.x() <= this.x+this.radioActivo;
-		var yEnRango = punto.y() >= this.y-this.radioActivo && punto.y() <= this.y+this.radioActivo;
+		var xEnRango = punto.x >= this.x-this.radioActivo && punto.x <= this.x+this.radioActivo;
+		var yEnRango = punto.y >= this.y-this.radioActivo && punto.y <= this.y+this.radioActivo;
 		return xEnRango && yEnRango;
 	}
 	compensar(punto) {
 		return {
-			xDelta : punto.x() - this.x;
-			yDelta : punto.y() - this.y;
+			xDelta : punto.x - this.x,
+			yDelta : punto.y - this.y,
 		};
 	}
 	trasladar(xDelta,yDelta) {
-		this.x = xDelta;
-		this.y = yDelta;
+		this.x += xDelta;
+		this.y += yDelta;
 	}
 }
-class PuntoControl() {
+class PuntoControl {
 	constructor(angulo,magnitud,padre,esPrimero) {
 		this.angulo = angulo;
 		this.magnitud = magnitud;
 		this.padre = padre;
 		this.esPrimero = esPrimero;
 		if(this.__proto__.sincVecino)
-			actualizarVecino()
+			this.actualizarVecino()
 	}
 	asignarAngulo(grados) {
 		if(this.angulo != grados)
@@ -149,30 +218,36 @@ class PuntoControl() {
 	origen() {
 		var line = null;
 		if(this.esPrimero)
-			line = padre.anterior;
+			line = this.padre.anterior;
 		else
-			line = padre;
+			line = this.padre;
 		if(line)
-			return new Punto(line.punto.x(), line.punto.y());
+			return new Punto(line.punto.x, line.punto.y);
 		return null
 	}
 	nuevoPunto() {
 		return new Punto(this.x(),this.y());
 	}
 	x() {
-		return this.origen().x() + this.xDelta();
+		return this.origen().x + this.xDelta();
 	}
 	y() {
-		return this.origen().y() + this.yDelta();
+		return this.origen().y + this.yDelta();
 	}
 	xDelta() {
-		return magnitud * Math.cos(angulo);
+		return this.magnitud * Math.cos(this.angulo);
 	}
 	yDelta() {
-		return magnitud * Math.sin(angulo);
+		return this.magnitud * Math.sin(this.angulo);
 	}
 	calcularAnguloMagnitudDeCompensacion(xDelta,yDelta) {
-		magnitud = Math.sqrt(Math.pow(xDelta, 2) + Math.pow(yDelta, 2));
+		this.magnitud = Math.sqrt(Math.pow(xDelta, 2) + Math.pow(yDelta, 2));
+		var intentaAngulo = Math.atan(yDelta/xDelta);
+		if(!isNaN(intentaAngulo)) {
+			this.angulo = intentaAngulo;
+			if(xDelta < 0)
+				this.angulo += Math.PI;
+		}
 	}
 	trasladar(xDelta,yDelta) {
 		var nuevaUbicacion = this.nuevoPunto();
@@ -185,11 +260,11 @@ class PuntoControl() {
 	actualizarVecino() {
 		var vecino = null;
 		if(this.esPrimero && this.padre.anterior)
-			vecino = padre.anterior.puntoCtrl2;
+			vecino = this.padre.anterior.puntoCtrl2;
 		else if(!this.esPrimero && this.padre.siguiente)
-			vecino = padre.siguiente.puntoCtrl1;
+			vecino = this.padre.siguiente.puntoCtrl1;
 		if(vecino)
-			vecino.asignarAngulo	
+			vecino.asignarAngulo(this.angulo + Math.PI);
 	}
 	contiene(punto) {
 		return this.nuevoPunto().contiene(punto);
@@ -204,8 +279,8 @@ class PuntoControl() {
 		ctx.beginPath();
 		var puntoInicio = this.origen();
 		var puntoFinal = this.nuevoPunto();
-		ctx.moveTo(puntoInicio.x(), puntoInicio.y());
-		ctx.lineTo(puntoFinal.x(), puntoFinal.y());
+		ctx.moveTo(puntoInicio.x, puntoInicio.y);
+		ctx.lineTo(puntoFinal.x, puntoFinal.y);
 		ctx.stroke();
 		puntoFinal.dibujarCuadrado(ctx);
 		ctx.restore();
@@ -215,62 +290,55 @@ class PuntoControl() {
 PuntoControl.prototype.sincVecino = true;
 class segmentoLinea {
 	constructor(punto,anterior) {
-		this.punto;
 		this.puntoCtrl1;
 		this.puntoCtrl2;
 		this.siguiente;
-		this.anterior;
 		this.puntoActivo;
 		this.inicializar(punto,anterior);
 	}
-	trazar(ctx) {
-		var trazarFn = function(ctx) {
-			this.punto.dibujarCuadrado(ctx);
-			if(this.puntoCtrl1)
-				this.puntoCtrl1.dibujar(ctx);
-			if(this.puntoCtrl2)
-				this.puntoCtrl2.dibujar(ctx);
-			if(this.anterior)
-				dibujarCurva(ctx);
-		};
-		return trazarFn;
+	dibujar(ctx) {
+		this.punto.dibujarCuadrado(ctx);
+		if(this.puntoCtrl1)
+			this.puntoCtrl1.dibujar(ctx);
+		if(this.puntoCtrl2)
+			this.puntoCtrl2.dibujar(ctx);
+		if(this.anterior)
+			this.dibujarCurva(ctx);
 	}
 	convertirATextoJS() {
-		var convertirATextoJSFn = function() {
-			if(!this.anterior)
-				return ' ctx.moveTo('+Math.round(this.punto.x())+' + xoff '+Math.round(this.punto.y())+' + yoff);';
-			else {
-				var puntoCtrl1x = 0;
-				var puntoCtrl1y = 0;
-				var puntoCtrl2x = 0;
-				var puntoCtrl2y = 0;
-				var x = 0;
-				var y = 0;
-				
-				if(this.puntoCtrl1) {
-					puntoCtrl1x = Math.round(this.puntoCtrl1.x());
-					puntoCtrl1y = Math.round(this.puntoCtrl1.y());
-				}
-				
-				if(this.puntoCtrl2) {
-					puntoCtrl2x = Math.round(this.puntoCtrl2.x());
-					puntoCtrl2y = Math.round(this.puntoCtrl2.y());
-				}
-
-				if(this.punto) {
-					x = Math.round(this.punto.x());
-					y = Math.round(this.punto.y());
-				}
-
-				return ' ctx.bezierCurveTo('+puntoCtrl1x+' + xoff, '+
-					puntoCtrl1y+' + yoff, '+
-					puntoCtrl2x+' + xoff, '+
-					puntoCtrl2y+' + yoff, '+
-					x+' + xoff, '+
-					y+' + yoff);';
+		console.log(this);
+		if(!this.anterior)
+			return ' ctx.moveTo('+Math.round(this.punto.x)+' + xoff '+Math.round(this.punto.y)+' + yoff);';
+		else {
+			var puntoCtrl1x = 0;
+			var puntoCtrl1y = 0;
+			var puntoCtrl2x = 0;
+			var puntoCtrl2y = 0;
+			var x = 0;
+			var y = 0;
+			
+			if(this.puntoCtrl1) {
+				puntoCtrl1x = Math.round(this.puntoCtrl1.x());
+				puntoCtrl1y = Math.round(this.puntoCtrl1.y());
 			}
-		};
-		return convertirATextoJSFn;
+			
+			if(this.puntoCtrl2) {
+				puntoCtrl2x = Math.round(this.puntoCtrl2.x());
+				puntoCtrl2y = Math.round(this.puntoCtrl2.y());
+			}
+
+			if(this.punto) {
+				x = Math.round(this.punto.x);
+				y = Math.round(this.punto.y);
+			}
+
+			return ' ctx.bezierCurveTo('+puntoCtrl1x+' + xoff, '+
+				puntoCtrl1y+' + yoff, '+
+				puntoCtrl2x+' + xoff, '+
+				puntoCtrl2y+' + yoff, '+
+				x+' + xoff, '+
+				y+' + yoff);';
+		}
 	}
 	seEncuentraEnSegmentoLinea(pos) {
 		if(this.intersectaPuntoEnTrazo(pos)) {
@@ -289,7 +357,7 @@ class segmentoLinea {
 		return this.punto && this.punto.contiene(pos);
 	}
 	mover(pos) {
-		var distancia = this.puntoActivo.offsetFrom(pos);
+		var distancia = this.puntoActivo.compensar(pos);
 		this.puntoActivo.trasladar(distancia.xDelta, distancia.yDelta);
 	}
 	dibujarCurva(ctx) {
@@ -297,8 +365,8 @@ class segmentoLinea {
 		ctx.fillStyle = 'black';
 		ctx.strokeStyle = 'black';
 		ctx.beginPath();
-		ctx.moveTo(this.anterior.punto.x(),this.anterior.punto.y()); 
-		ctx.bezierCurveTo(this.puntoCtrl1.x(),this.puntoCtrl1.y(),this.puntoCtrl2.x(),this.puntoCtrl2.y(),this.punto.x(),this.punto.y());
+		ctx.moveTo(this.anterior.punto.x,this.anterior.punto.y); 
+		ctx.bezierCurveTo(this.puntoCtrl1.x,this.puntoCtrl1.y,this.puntoCtrl2.x,this.puntoCtrl2.y,this.punto.x,this.punto.y);
 		ctx.stroke();
 		ctx.restore();
 	}
@@ -306,9 +374,9 @@ class segmentoLinea {
 		this.punto = punto;
 		this.anterior = anterior;
 		if(this.anterior) {
-			var inclinacion = this.punto.computeSlope(this.anterior.punto);
+			var inclinacion = this.punto.calcularInclinacion(this.anterior.punto);
 			var angulo = Math.atan(inclinacion);
-			if(this.anterior.punto.x() > this.punto.x())
+			if(this.anterior.punto.x > this.punto.x)
 				angulo *= -1;
 			this.puntoCtrl1 = new PuntoControl(angulo+Math.PI,15,this,true);
 			this.puntoCtrl2 = new PuntoControl(angulo,15,this,false);
@@ -320,7 +388,7 @@ class TrazoCurvo {
 		this.cabeza = null;
 		this.pie = null;
 		this.segmentoActivo;
-		this.inicializar();
+		this.inicializar(puntoInicio);
 	}
 	agregarPunto(punto) {
 		var nuevoPunto = new segmentoLinea(punto, this.pie);
@@ -334,15 +402,20 @@ class TrazoCurvo {
 		return nuevoPunto;
 	}
 	dibujar(ctx) {
+		console.log(this)
+		console.log('TrazoCurvo.dibujar');
+		console.log(ctx);
 		if(this.cabeza == null)
 			return;
 		var activo = this.cabeza;
+		console.log('activo');
+		console.log(activo);
 		while(activo != null) {
 			activo.dibujar(ctx);
 			activo = activo.siguiente;
 		}
 	}
-	puntoSeleccionado(pos) {
+	seleccionarPunto(pos) {
 		var activo = this.cabeza;
 		while(activo != null) {
 			if(activo.seEncuentraEnSegmentoLinea(pos)) {
@@ -353,7 +426,7 @@ class TrazoCurvo {
 		}
 		return false;
 	}
-	puntoEliminado(pos) {
+	eliminarPunto(pos) {
 		var activo = this.cabeza;
 		while(activo != null) {
 			if(activo.intersectaPuntoEnTrazo(pos)) {
@@ -367,8 +440,8 @@ class TrazoCurvo {
 				} else if(!vecinoIzq) { // Caso Cabeza
 					this.cabeza = vecinoDer;
 					if(this.cabeza) {
-						vecinoDer.puntoCtrl1 = null:
-						vecinoDer.puntoCtrl2 = null:
+						vecinoDer.puntoCtrl1 = null;
+						vecinoDer.puntoCtrl2 = null;
 						this.cabeza.anterior = null;
 					} else
 						this.pie = null;
@@ -384,5 +457,28 @@ class TrazoCurvo {
 			activo = activo.siguiente;
 		}
 		return false;
+	}
+	limpiarSeleccion() {
+		this.segmentoActivo = null;
+	}
+	actualizarSeleccion(pos) {
+		this.segmentoActivo.mover(pos);
+	}
+	convertirATextoJS() {
+		var cadena = [
+			'function dibujarForma(ctx, xoff, yoff) {',
+			' ctx.beginPath();',
+		];
+		var activo = this.cabeza;
+		while(activo != null) {
+			cadena.push(activo.convertirATextoJS());
+			activo = activo.siguiente;
+		}
+		cadena.push(' ctx.stroke();');
+		cadena.push('}');
+		return cadena.join('\n');
+	}
+	inicializar(puntoInicio) {
+		this.agregarPunto(puntoInicio);
 	}
 }
