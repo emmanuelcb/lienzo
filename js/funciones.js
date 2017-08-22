@@ -9,11 +9,10 @@ window.onload = function() {
 	altoVentana = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 	seleccionar.cuerpo.style.width = anchoVentana;
 	seleccionar.cuerpo.style.height = altoVentana;
-	seleccionar.lienzo.setAttribute('width',anchoVentana-40);
-	seleccionar.lienzo.setAttribute('height',altoVentana-80);
 	lienzo = new ServiciosLienzo(seleccionar.lienzo,{
 		'seleccion':seleccionar.seleccion,
 		'selecciondirecta':seleccionar.seleccionDirecta,
-		'pluma':seleccionar.pluma
+		'pluma':seleccionar.pluma,
+		'plumaeliminar':seleccionar.plumaEliminar
 	},anchoVentana-40,altoVentana-80,seleccionar.barraEstado);
 };

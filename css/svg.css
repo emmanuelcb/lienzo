@@ -1,0 +1,105 @@
+html {
+	width:	100vw;
+	height:	100vh;
+	margin: 0;
+	padding: 0;
+	display: block;
+}
+body {
+	width: 100vw;
+	height: 100vh;
+	display: inline-block;
+	border-collapse: collapse;
+	margin: 0;
+	padding: 0;
+	background-color: rgba(255,255,255,1);
+	font-family: 'Verdana', sans-serif;
+	font-size: 2vh;
+}
+div#barraHerramientas {
+	position: relative;
+	z-index: 2;
+	width: 100vw;
+	height: 5vh;
+	display: block;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: 1.5vh;
+	background-color: rgba(60,60,60,1);
+}
+div#barraHerramientas ul {
+	position: relative;
+	display: table-row;
+	margin: 0;
+	padding: 0;
+	height:5vh;
+}
+div#barraHerramientas ul li {
+	position: relative;
+	line-height: 2vh;
+	padding: 1.5vh 1.5vw 1.5vh 1vw;
+	display: table-cell;
+	vertical-align: middle;
+	text-align: left;
+	cursor: pointer;
+	color: rgba(200,200,200,1);
+}
+div#barraHerramientas ul li:hover ul {
+	display: table-row;
+}
+div#barraHerramientas ul li ul {
+	position: absolute;
+	top: 5vh;
+	left: 0;
+	display: none;
+	margin: 0;
+	padding: 0;
+}
+div#barraHerramientas ul li ul li {
+	display: block;
+	padding: 1vh 1vw;
+	vertical-align: middle;
+	text-align: left;
+	background-color: rgba(70,70,70,1);
+}
+div#barraHerramientas ul li ul li:hover {
+	background-color: rgba(100,100,100,1);
+}
+div#contenido {
+	width: 100vw;
+	height: 90vh;
+	display: table-row;
+}
+div#contenedorLienzo {
+	position: relative;
+	width: 90vw;
+	height: 90vh;
+	display: table-cell;
+}
+div#lienzo {
+	width: 95vw;
+	height: 90vh;
+	position: absolute;
+	border-collapse: collapse;
+	display: block;
+}
+div#barraLateral {
+	position: relative;
+	width: 5vh;
+	border-collapse: collapse;
+	display: table-cell;
+	text-align: center;
+	vertical-align: middle;
+	background-color: rgba(90,90,90,1);
+}
+div#barraEstado {
+	position: relative;
+	z-index: 2;
+	width: 98vw;
+	padding-left: 2vw;
+	height: 5vh;
+	display: block;
+	margin: 0;
+	border-collapse: collapse;
+	background-color: rgba(60,60,60,1);
+}

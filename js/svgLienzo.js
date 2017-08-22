@@ -1,24 +1,19 @@
-class ServiciosLienzo {
-	constructor(lienzo,herramientas,ancho,alto,barraEstado) {
+class SVGLienzo {
+	constructor(lienzo,herramientas,barraEstado) {
 		this.validarParametros(lienzo,herramientas);
-		this.inicializar(lienzo,ancho,alto,barraEstado);
+		this.inicializar(lienzo,barraEstado);
 		this.herramientaActiva = this.herramientas.pluma;
 		this.agregarEventos(herramientas);
 	}
 	validarParametros(lienzo,herramientas) {
-		if(Object.prototype.toString.call(lienzo) !== '[object HTMLCanvasElement]')
-			throw new Error('Ups!, parece que tu desarrollador la cago, este no es un Canvas.');
+		if(Object.prototype.toString.call(lienzo) !== '[object SVGSVGElement]')
+			throw new Error('Ups!, parece que tu desarrollador la cago, este no es un SVG.');
 		if(Object.prototype.toString.call(herramientas) !== '[object Object]')
 			throw new Error('Ups!, parece que tu desarrollador la cago, este no es un Object.');
 	}
-	inicializar(lienzo,ancho,alto,barraEstado) {
+	inicializar(lienzo,barraEstado) {
 		this.barraEstado = barraEstado;
-		this.ancho = ancho;
-		this.alto = alto;
 		this.lienzo = lienzo;
-		this.lienzo.setAttribute('width',this.ancho);
-		this.lienzo.setAttribute('height',this.alto);
-		this.contexto = this.lienzo.getContext('2d');
 		this.herramientasPermitidas = ['seleccion','selecciondirecta','pluma','plumaeliminar'];
 		this.herramientas = {
 			seleccion : {
@@ -129,8 +124,13 @@ class ServiciosLienzo {
 			x = evento.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
 			y = evento.clientY + document.body.scrollTop + document.documentElement.scrollTop;
 		}
-		x -= this.lienzo.offsetLeft;
-		y -= this.lienzo.offsetTop;
+		if(!isNaN(this.lienzo.offsetLeft) && !isNaN(this.lienzo.offsetTop)) {
+			x -= this.lienzo.offsetLeft;
+			y -= this.lienzo.offsetTop;
+		} else if(!isNaN(this.lienzo.parentElement.offsetLeft) && !isNaN(this.lienzo.parentElement.offsetTop)) {
+			x -= this.lienzo.parentElement.offsetLeft;
+			y -= this.lienzo.parentElement.offsetTop;
+		}
 		
 		return new Punto(this,x,y);
 	}
@@ -164,12 +164,11 @@ class ServiciosLienzo {
 		return ratonSueltoFn;
 	}
 	hacer() {
-		this.contexto.clearRect(0,0,this.ancho,this.alto);
+		this.lienzo.innerHTML = '';
 		if(this.trazoCurvo) {
-			this.trazoCurvo.dibujar(this.contexto);
-			console.log(this.trazoCurvo.convertirATextoJS());
+			this.trazoCurvo.dibujar();
 			this.barraEstado.innerHTML = '';
-			this.barraEstado.appendChild(this.trazoCurvo.convertirALinkDescarga()); 
+			this.barraEstado.innerHTML = this.trazoCurvo.convertirATextoJS();
 		}
 	}
 }
@@ -185,8 +184,22 @@ class Punto {
 		this.x = x;
 		this.y = y;
 	}
-	dibujarCuadrado(ctx) {
-		ctx.fillRect(this.x-this.radio, this.y-this.radio, this.radio*2, this.radio*2);
+	dibujarCuadrado(color) {
+		var cuadrado = document.createElementNS('http://www.w3.org/2000/svg','rect');
+		cuadrado.setAttributeNS(null,'x',this.x-this.radio);
+		cuadrado.setAttributeNS(null,'y',this.y-this.radio);
+		cuadrado.setAttributeNS(null,'width',this.radio*2);
+		cuadrado.setAttributeNS(null,'height',this.radio*2);
+		cuadrado.setAttributeNS(null,'fill',color);
+		this.serviciosLienzo.lienzo.appendChild(cuadrado);
+	}
+	dibujarCirculo(color) {
+		var circulo = document.createElementNS('http://www.w3.org/2000/svg','circle');
+		circulo.setAttributeNS(null,'cx',this.x);
+		circulo.setAttributeNS(null,'cy',this.y);
+		circulo.setAttributeNS(null,'r',this.radio);
+		circulo.setAttributeNS(null,'fill',color);
+		this.serviciosLienzo.lienzo.appendChild(circulo);
 	}
 	calcularInclinacion(punto) {
 		return (punto.y-this.y) / (punto.x-this.x);
@@ -222,13 +235,13 @@ class PuntoControl {
 			this.angulo = grados;
 	}
 	origen() {
-		var line = null;
+		var linea = null;
 		if(this.esPrimero)
-			line = this.padre.anterior;
+			linea = this.padre.anterior;
 		else
-			line = this.padre;
-		if(line)
-			return new Punto(this.serviciosLienzo,line.punto.x,line.punto.y);
+			linea = this.padre;
+		if(linea)
+			return new Punto(this.serviciosLienzo,linea.punto.x,linea.punto.y);
 		return null;
 	}
 	nuevoPunto() {
@@ -269,8 +282,8 @@ class PuntoControl {
 			vecino = this.padre.anterior.puntoCtrl2;
 		else if(!this.esPrimero && this.padre.siguiente)
 			vecino = this.padre.siguiente.puntoCtrl1;
-		//if(vecino)
-			//vecino.asignarAngulo(this.angulo + Math.PI);
+		if(vecino)
+			vecino.asignarAngulo(this.angulo + Math.PI);
 	}
 	contiene(punto) {
 		return this.nuevoPunto().contiene(punto);
@@ -278,23 +291,23 @@ class PuntoControl {
 	compensar(punto) {
 		return this.nuevoPunto().compensar(punto);
 	}
-	dibujar(ctx) {
-		ctx.save();
-		ctx.fillStyle = 'gray';
-		ctx.strokeStyle = 'gray';
-		ctx.beginPath();
+	dibujar() {
 		var puntoInicio = this.origen();
 		var puntoFinal = this.nuevoPunto();
-		ctx.moveTo(puntoInicio.x, puntoInicio.y);
-		ctx.lineTo(puntoFinal.x, puntoFinal.y);
-		ctx.stroke();
-		puntoFinal.dibujarCuadrado(ctx);
-		ctx.restore();
+		var linea = document.createElementNS('http://www.w3.org/2000/svg','line');
+		linea.setAttributeNS(null,'x1',puntoInicio.x);
+		linea.setAttributeNS(null,'y1',puntoInicio.y);
+		linea.setAttributeNS(null,'x2',puntoFinal.x);
+		linea.setAttributeNS(null,'y2',puntoFinal.y);
+		linea.setAttributeNS(null,'fill','none');
+		linea.setAttributeNS(null,'style','stroke:gray;stroke-width:1;fill:none;');
+		this.serviciosLienzo.lienzo.appendChild(linea);
+		puntoFinal.dibujarCirculo('gray');
 	}
 }
 // Variable estatica que dicta si los vecinos deben mantenerse sincronizados.
-PuntoControl.prototype.sincVecino = true;
-class segmentoLinea {
+PuntoControl.prototype.sincVecino = false;
+class SegmentoLinea {
 	constructor(serviciosLienzo,punto,anterior) {
 		this.serviciosLienzo = serviciosLienzo;
 		this.puntoCtrl1;
@@ -303,18 +316,18 @@ class segmentoLinea {
 		this.puntoActivo;
 		this.inicializar(punto,anterior);
 	}
-	dibujar(ctx) {
-		this.punto.dibujarCuadrado(ctx);
+	dibujar() {
+		this.punto.dibujarCuadrado('black');
 		if(this.puntoCtrl1)
-			this.puntoCtrl1.dibujar(ctx);
+			this.puntoCtrl1.dibujar('black');
 		if(this.puntoCtrl2)
-			this.puntoCtrl2.dibujar(ctx);
+			this.puntoCtrl2.dibujar('black');
 		if(this.anterior)
-			this.dibujarCurva(ctx);
+			this.dibujarCurva('black');
 	}
 	convertirATextoJS() {
 		if(!this.anterior)
-			return ' ctx.moveTo('+Math.round(this.punto.x)+' + xoff '+Math.round(this.punto.y)+' + yoff);';
+			return 'M'+Math.round(this.punto.x)+','+Math.round(this.punto.y)+' ';
 		else {
 			var puntoCtrl1x = 0;
 			var puntoCtrl1y = 0;
@@ -338,41 +351,7 @@ class segmentoLinea {
 				y = Math.round(this.punto.y);
 			}
 
-			return ' ctx.bezierCurveTo('+puntoCtrl1x+' + xoff, '+
-				puntoCtrl1y+' + yoff, '+
-				puntoCtrl2x+' + xoff, '+
-				puntoCtrl2y+' + yoff, '+
-				x+' + xoff, '+
-				y+' + yoff);';
-		}
-	}
-	convertirATrazo() {
-		if(!this.anterior)
-			return 'M'+Math.round(this.punto.x)+','+Math.round(this.punto.y);
-		else {
-			var puntoCtrl1x = 0;
-			var puntoCtrl1y = 0;
-			var puntoCtrl2x = 0;
-			var puntoCtrl2y = 0;
-			var x = 0;
-			var y = 0;
-			
-			if(this.puntoCtrl1) {
-				puntoCtrl1x = Math.round(this.puntoCtrl1.x());
-				puntoCtrl1y = Math.round(this.puntoCtrl1.y());
-			}
-			
-			if(this.puntoCtrl2) {
-				puntoCtrl2x = Math.round(this.puntoCtrl2.x());
-				puntoCtrl2y = Math.round(this.puntoCtrl2.y());
-			}
-
-			if(this.punto) {
-				x = Math.round(this.punto.x);
-				y = Math.round(this.punto.y);
-			}
-
-			return ' C'+puntoCtrl1x+','+puntoCtrl1y+' '+puntoCtrl2x+','+puntoCtrl2y+' '+x+','+y;
+			return 'C'+puntoCtrl1x+','+puntoCtrl1y+' '+puntoCtrl2x+','+puntoCtrl2y+' '+x+','+y+' ';
 		}
 	}
 	seEncuentraEnSegmentoLinea(pos) {
@@ -395,15 +374,17 @@ class segmentoLinea {
 		var distancia = this.puntoActivo.compensar(pos);
 		this.puntoActivo.trasladar(distancia.xDelta, distancia.yDelta);
 	}
-	dibujarCurva(ctx) {
-		ctx.save();
-		ctx.fillStyle = 'black';
-		ctx.strokeStyle = 'black';
-		ctx.beginPath();
-		ctx.moveTo(this.anterior.punto.x,this.anterior.punto.y);
-		ctx.bezierCurveTo(this.puntoCtrl1.x(),this.puntoCtrl1.y(),this.puntoCtrl2.x(),this.puntoCtrl2.y(),this.punto.x,this.punto.y);
-		ctx.stroke();
-		ctx.restore();
+	dibujarCurva() {
+		var cadenaD = 'M'+this.anterior.punto.x+','+this.anterior.punto.y+
+			' C'+this.puntoCtrl1.x()+','+this.puntoCtrl1.y()+
+			' '+this.puntoCtrl2.x()+','+this.puntoCtrl2.y()+
+			' '+this.punto.x+','+this.punto.y;
+		var trazo = document.createElementNS('http://www.w3.org/2000/svg','path');
+		trazo.setAttributeNS(null,'d',cadenaD);
+		trazo.setAttributeNS(null,'stroke','black');
+		trazo.setAttributeNS(null,'stroke-width',2);
+		trazo.setAttributeNS(null,'fill','none');
+		this.serviciosLienzo.lienzo.appendChild(trazo);
 	}
 	inicializar(punto,anterior) {	
 		this.punto = punto;
@@ -427,7 +408,7 @@ class TrazoCurvo {
 		this.inicializar(puntoInicio);
 	}
 	agregarPunto(punto) {
-		var nuevoPunto = new segmentoLinea(this.serviciosLienzo,punto,this.pie);
+		var nuevoPunto = new SegmentoLinea(this.serviciosLienzo,punto,this.pie);
 		if(this.pie	== null) {
 			this.pie = nuevoPunto;
 			this.cabeza = nuevoPunto;
@@ -437,12 +418,12 @@ class TrazoCurvo {
 		}
 		return nuevoPunto;
 	}
-	dibujar(ctx) {
+	dibujar() {
 		if(this.cabeza == null)
 			return;
 		var activo = this.cabeza;
 		while(activo != null) {
-			activo.dibujar(ctx);
+			activo.dibujar();
 			activo = activo.siguiente;
 		}
 	}
@@ -499,53 +480,17 @@ class TrazoCurvo {
 	}
 	convertirATextoJS() {
 		var cadena = [
-			'function dibujarForma(ctx, xoff, yoff) {',
-			' ctx.beginPath();',
+			'<path d="'
 		];
 		var activo = this.cabeza;
 		while(activo != null) {
 			cadena.push(activo.convertirATextoJS());
 			activo = activo.siguiente;
 		}
-		cadena.push(' ctx.stroke();');
-		cadena.push('}');
+		cadena.push('" />');
 		return cadena.join('\n');
 	}
 	inicializar(puntoInicio) {
 		this.agregarPunto(puntoInicio);
-	}
-	convertirALinkDescarga() {
-		var cadena = [''];
-		var activo = this.cabeza;
-		while(activo != null) {
-			cadena.push(activo.convertirATrazo());
-			activo = activo.siguiente;
-		}
-		var cadenaD = cadena.join(' ');
-
-		var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-		var trazo = document.createElementNS('http://www.w3.org/2000/svg','path');
-		trazo.setAttributeNS(null,'d',cadenaD);
-		trazo.setAttributeNS(null,'stroke','black');
-		trazo.setAttributeNS(null,'stroke-width',3);
-		trazo.setAttributeNS(null,'fill','none');
-		svg.appendChild(trazo);
-
-		var serializador = new XMLSerializer();
-		var fuente = serializador.serializeToString(svg);
-		if(!fuente.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/))
-		    fuente = fuente.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-		if(!fuente.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/))
-		    fuente = fuente.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-		if(fuente.match(/xmlns="http\:\/\/www\.w3\.org\/1999\/xhtml"/))
-			fuente = fuente.replace(/xmlns="http\:\/\/www\.w3\.org\/1999\/xhtml"/, '');
-		fuente = '<?xml version="1.0" standalone="no"?>\r\n' + fuente;
-		var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(fuente);
-		var link = document.createElement('a');
-		link.setAttribute('href',url);
-		link.setAttribute('download','miSVG.svg');
-		link.appendChild(document.createTextNode('Bajalo!!'));
-
-		return link;
 	}
 }
