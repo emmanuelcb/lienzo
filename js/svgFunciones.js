@@ -47,5 +47,5 @@ window.onload = function() {
 		'selecciondirecta':seleccionar.seleccionDirecta,
 		'pluma':seleccionar.pluma,
 		'plumaeliminar':seleccionar.plumaEliminar
-	},seleccionar.barraEstado);
+	},seleccionar.barraEstado,url);
 };

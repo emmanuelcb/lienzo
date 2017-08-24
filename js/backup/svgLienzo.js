@@ -88,8 +88,7 @@ class SVGLienzo {
 		this.atajos = {
 			V : 'seleccion',
 			A : 'selecciondirecta',
-			P : 'pluma',
-			AltP : 'plumaeliminar'
+			P : 'pluma'
 		}
 	}
 	agregarEventos(herramientas) {
@@ -97,7 +96,9 @@ class SVGLienzo {
 		this.lienzo.addEventListener('mousedown',this.manejadorRatonPresionado(this),false);
 		this.lienzo.addEventListener('mouseup',this.manejadorRatonSuelto(this),false);
 		// Atajos
-		document.addEventListener('keydown',this.agregarAtajoFuncion(this),false);
+		document.addEventListener('keydown',function(e) {
+			//console.log([e]);
+		}, false);
 		// Herramientas
 		for(var herramienta in herramientas) {
 			if(this.herramientasPermitidas.indexOf(herramienta) !== -1) {
@@ -105,21 +106,11 @@ class SVGLienzo {
 			}
 		}
 	}
-	agregarAtajoFuncion(este) {
-		var fn = function(evento) {
-			var tecla = evento.key;
-			if(este.atajos[tecla.toUpperCase()]) {
-				var herramienta = este.atajos[tecla.toUpperCase()];
-				este.herramientaActiva = este.herramientas[herramienta];
-			}
-		}
-		return fn;
-	}
-	agregaFuncion(este,herramienta) {
+	agregaFuncion(esta,herramienta) {
 		var fn = function(evento){
 			//console.log([evento]);
-			//console.log([este]);
-			este.herramientaActiva = este.herramientas[herramienta];
+			//console.log([esta]);
+			esta.herramientaActiva = esta.herramientas[herramienta];
 		}
 		return fn;
 	}

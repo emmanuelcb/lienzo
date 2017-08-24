@@ -37,7 +37,7 @@ div#barraHerramientas ul {
 div#barraHerramientas ul li {
 	position: relative;
 	line-height: 2vh;
-	padding: 1.5vh 1.5vw 1.5vh 1vw;
+	padding: 1.5vh 3vw 1.5vh 1vw;
 	display: table-cell;
 	vertical-align: middle;
 	text-align: left;
@@ -75,6 +75,7 @@ div#contenedorLienzo {
 	width: 90vw;
 	height: 90vh;
 	display: table-cell;
+	cursor:url('../images/hold.svg'),auto;');
 }
 div#lienzo {
 	width: 95vw;
@@ -99,6 +100,7 @@ div#barraEstado {
 	padding-left: 2vw;
 	height: 5vh;
 	display: block;
+	vertical-align: middle;
 	margin: 0;
 	border-collapse: collapse;
 	background-color: rgba(60,60,60,1);

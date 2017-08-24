@@ -1,0 +1,81 @@
+<!DOCTYPE html />
+<html>
+<head>
+<title>Mi lienzo SVG</title>
+<link rel="stylesheet" type="text/css" href="css/svg.css" />
+</head>
+<body id="cuerpo">
+	<!-- HEADER -->
+	<div id="barraHerramientas"></div>
+	<!-- BODY -->
+	<div id="contenido">
+		<div id="barraLateral"></div>
+		<div id="contenedorLienzo">
+			<svg id="miSVG" style='width:95vw;height:90vh;'>
+				<path id="miPath" style="fill:#303C42;" d="M320,53.333c-7.875,0-15.26,2.146-21.604,5.885C296.01,37.927,277.906,21.333,256,21.333
+					c-8.781,0-16.938,2.667-23.729,7.219C226.427,11.948,210.583,0,192,0s-34.427,11.948-40.271,28.552
+					C144.938,24,136.781,21.333,128,21.333c-23.531,0-42.667,19.135-42.667,42.667v38.25l-35.885,35.885
+					c-18.125,18.125-28.115,42.229-28.115,67.875c0,98.146,79.844,177.99,177.99,177.99H224c76.458,0,138.667-62.208,138.667-138.667V96
+					C362.667,72.469,343.531,53.333,320,53.333z"/>
+			</svg>
+		</div>
+	</div>
+	<!-- FOOTER -->
+	<div id="barraEstado"></div>
+	<script type="text/javascript" src="js/selector.js"></script>
+	<script type="text/javascript">
+		var seleccionar;
+		var trazoTemporal = {
+			radio: 3,
+			radioActivo: 5,
+			puntos:[],
+			puntosBezier:[],
+			puntosActivos:[]
+		};
+		var rgx = /^M[0-9.,-\s\n\r]+|^m[0-9.,-\s\n\r]+|L[0-9.,-\s\n\r]+|l[0-9.,-\s\n\r]+|H[0-9.,-\s\n\r]+|h[0-9.,-\s\n\r]+|V[0-9.,-\s\n\r]+|v[0-9.,-\s\n\r]+|C[0-9.,-\s\n\r]+|c[0-9.,-\s\n\r]+|S[0-9.,-\s\n\r]+|s[0-9.,-\s\n\r]+|Q[0-9.,-\s\n\r]+|q[0-9.,-\s\n\r]+|T[0-9.,-\s\n\r]+|t[0-9.,-\s\n\r]+|A[0-9.,-\s\n\r]+|a[0-9.,-\s\n\r]+|Z|z/g;
+		window.onload = function() {
+			seleccionar = new Selector('id',['body','div','ul','li','svg','path']);
+			seleccionar.miPath.addEventListener('mousedown',function(e){
+				var cadenaD = this.getAttribute('d');
+				console.log(cadenaD);
+				var puntos = cadenaD.match(rgx);
+				console.log(puntos);
+				var posicion;
+				for(var i=0,j=puntos.length; i<j; i++) {
+					var info = puntos[i];
+					var resultado = procesarInfo(info);
+					if(resultado.pos == 'absoluta') {
+						resultado.x = resultado.x.indexOf('-') !== -1 ? (
+						resultado.x = 
+					) : ();
+					}
+					var punto = document.createElementNS('http://www.w3.org/2000/svg','rect');
+					punto.setAttributeNS(null,'x',resultado.x-trazoTemporal.radio);
+					punto.setAttributeNS(null,'y',resultado.y-trazoTemporal.radio);
+					punto.setAttributeNS(null,'width',trazoTemporal.radio*2);
+					punto.setAttributeNS(null,'height',trazoTemporal.radio*2);
+					punto.setAttributeNS(null,'class','punto');
+					seleccionar.miSVG.appendChild(punto);
+					trazoTemporal.puntos.push(punto);
+					posicion.x = resultado.x;
+					posicion.y = resultado.y;
+				}
+			},false);
+		}
+		function procesarInfo(info,posicion) {
+			var resultado;
+			if(info.match(/^M[0-9.,-\s\n\r]+/g)) {
+				info = info.match(/[A-Za-z]?-[0-9.-]+|[A-Za-z]?[0-9.-]+/g);
+				resultado = {
+					x: info[0].replace(/[A-Za-z]/g,''),
+					y: info[1],
+					pos: 'absoluta'
+				}
+			} else if(info.match(/^M[0-9.,--\s\n\r]+/g)) {
+
+			}
+			return resultado;
+		}
+	</script>
+</body>
+</html>
