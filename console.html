@@ -36,43 +36,89 @@
 		window.onload = function() {
 			seleccionar = new Selector('id',['body','div','ul','li','svg','path']);
 			seleccionar.miPath.addEventListener('mousedown',function(e){
-				var cadenaD = this.getAttribute('d');
-				console.log(cadenaD);
+				var cadenaD = this.getAttribute('d').replace(/[\r\n\s]+/g,'');
 				var puntos = cadenaD.match(rgx);
 				console.log(puntos);
-				var posicion;
+				var posicion = {
+					x: 0,
+					y: 0,
+					inicialX: undefined,
+					inicialY: undefined
+				};
 				for(var i=0,j=puntos.length; i<j; i++) {
 					var info = puntos[i];
-					var resultado = procesarInfo(info);
-					if(resultado.pos == 'absoluta') {
-						resultado.x = resultado.x.indexOf('-') !== -1 ? (
-						resultado.x = 
-					) : ();
+					var resultado = procesarInfo(info,posicion);
+					if(resultado) {
+						if(resultado.pos != 'absoluta') {
+							resultado.x = parseInt(posicion.x) + parseInt(resultado.x);
+							resultado.y = parseInt(posicion.y) + parseInt(resultado.y);
+						}
+						if(posicion.inicialX === undefined) {
+							posicion.inicialX = parseInt(resultado.x);
+							posicion.inicialY = parseInt(resultado.y);
+						}
+						var punto = document.createElementNS('http://www.w3.org/2000/svg','rect');
+						punto.setAttributeNS(null,'x',resultado.x-trazoTemporal.radio);
+						punto.setAttributeNS(null,'y',resultado.y-trazoTemporal.radio);
+						punto.setAttributeNS(null,'width',trazoTemporal.radio*2);
+						punto.setAttributeNS(null,'height',trazoTemporal.radio*2);
+						punto.setAttributeNS(null,'class','punto');
+						seleccionar.miSVG.appendChild(punto);
+						trazoTemporal.puntos.push(punto);
+						posicion.x = parseInt(resultado.x);
+						posicion.y = parseInt(resultado.y);
 					}
-					var punto = document.createElementNS('http://www.w3.org/2000/svg','rect');
-					punto.setAttributeNS(null,'x',resultado.x-trazoTemporal.radio);
-					punto.setAttributeNS(null,'y',resultado.y-trazoTemporal.radio);
-					punto.setAttributeNS(null,'width',trazoTemporal.radio*2);
-					punto.setAttributeNS(null,'height',trazoTemporal.radio*2);
-					punto.setAttributeNS(null,'class','punto');
-					seleccionar.miSVG.appendChild(punto);
-					trazoTemporal.puntos.push(punto);
-					posicion.x = resultado.x;
-					posicion.y = resultado.y;
 				}
 			},false);
 		}
 		function procesarInfo(info,posicion) {
 			var resultado;
-			if(info.match(/^M[0-9.,-\s\n\r]+/g)) {
-				info = info.match(/[A-Za-z]?-[0-9.-]+|[A-Za-z]?[0-9.-]+/g);
+			if(info.match(/^M[0-9.,-\s\n\r]+|^m[0-9.,-\s\n\r]+/g)) { // M = Moveto
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
 				resultado = {
-					x: info[0].replace(/[A-Za-z]/g,''),
-					y: info[1],
+					x: parseInt(valores[0].replace(/[A-Za-z]/g,'')),
+					y: parseInt(valores[1]),
+					pos: info.match(/^M[0-9.,-\s\n\r]+/g) ? 'absoluta' : 'relativo'
+				};
+			} else if(info.match(/^L[0-9.,--\s\n\r]+|^l[0-9.,--\s\n\r]+/g)) { // L = Lineto
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
+				resultado = {
+					x: parseInt(valores[0].replace(/[A-Za-z]/g,'')),
+					y: parseInt(valores[1]),
+					pos: info.match(/^L[0-9.,-\s\n\r]+/g) ? 'absoluta' : 'relativo'
+				}
+			} else if(info.match(/^H[0-9.,--\s\n\r]+|^h[0-9.,--\s\n\r]+/g)) { // H = Lineto horizontal
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
+				resultado = {
+					x: info.match(/^H[0-9.,-\s\n\r]+/g) ? 
+						parseInt(valores[0].replace(/[A-Za-z]/g,'')) : 
+						parseInt(valores[0].replace(/[A-Za-z]/g,''))+parseInt(posicion.x),
+					y: parseInt(posicion.y),
 					pos: 'absoluta'
 				}
-			} else if(info.match(/^M[0-9.,--\s\n\r]+/g)) {
-
+			} else if(info.match(/^V[0-9.,--\s\n\r]+|^v[0-9.,--\s\n\r]+/g)) { // V = Lineto vertical
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
+				resultado = {
+					x: parseInt(posicion.x),
+					y: info.match(/^V[0-9.,-\s\n\r]+/g) ? 
+						parseInt(valores[0].replace(/[A-Za-z]/g,'')) : 
+						parseInt(valores[0].replace(/[A-Za-z]/g,''))+parseInt(posicion.y),
+					pos: 'absoluta'
+				}
+			} else if(info.match(/^C[0-9.,--\s\n\r]+|^c[0-9.,--\s\n\r]+/g)) { // C = Curveto
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
+				resultado = {
+					x: parseInt(valores[4]),
+					y: parseInt(valores[5]),
+					pos: info.match(/^C[0-9.,-\s\n\r]+/g) ? 'absoluta' : 'relativo'
+				}
+			} else if(info.match(/^S[0-9.,--\s\n\r]+|^s[0-9.,--\s\n\r]+/g)) { // S = Curveto suave
+				var valores = info.match(/[A-Za-z]?-[0-9.]+|[A-Za-z]?[0-9.]+/g);
+				resultado = {
+					x: parseInt(valores[2]),
+					y: parseInt(valores[3]),
+					pos: info.match(/^S[0-9.,-\s\n\r]+/g) ? 'absoluta' : 'relativo'
+				}
 			}
 			return resultado;
 		}

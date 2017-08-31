@@ -1,0 +1,141 @@
+<!DOCTYPE html />
+<html>
+<head>
+<title>Mi lienzo SVG</title>
+<link rel="stylesheet" type="text/css" href="css/svg.css" />
+</head>
+<body id="cuerpo">
+	<!-- HEADER -->
+	<div id="barraHerramientas">
+		<ul>
+			<li>
+				Herramientas
+				<ul>
+					<li id="seleccion" title="Seleccion (V)">Seleccion</li>
+					<li id="seleccionDirecta" title="Seleccion Directa (A)">Seleccion Directa</li>
+					<li id="pluma" title="Pluma (P)">Pluma</li>
+					<li id="plumaEliminar" title="Pluma Eliminar (Alt + P)">Pluma Eliminar</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	<!-- BODY -->
+	<div id="contenido">
+		<div id="barraLateral"></div>
+		<div id="contenedorLienzo"></div>
+	</div>
+	<!-- FOOTER -->
+	<div id="barraEstado"></div>
+	<script type="text/javascript" src="js/selector.js"></script>
+	<script type="text/javascript" src="js/test.js"></script>
+	<script type="text/javascript">
+		window.onload = function() {
+			seleccionar = new Selector('id',['body','div','ul','li','svg','path']);
+
+			var lienzo = new ServiciosLienzo(seleccionar.contenedorLienzo,{
+				'seleccion':seleccionar.seleccion,
+				'selecciondirecta':seleccionar.seleccionDirecta,
+				'pluma':seleccionar.pluma,
+				'plumaeliminar':seleccionar.plumaEliminar
+			});
+
+			/*var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+			svg.setAttributeNS(null,'style','width:90vw;height:90vh;');
+
+			trazar(svg,trazo);
+
+			seleccionar.contenedorLienzo.appendChild(svg);*/
+		};
+
+		function trazar(svg,t) {
+			for(var i=0,j=t.puntos.length; i<j; i++) {
+				var anterior = t.puntos[i-1];
+				var punto = t.puntos[i];
+				if(anterior && punto)
+					dibujarLinea(svg,anterior,punto);
+			}
+
+			for(var i=0,j=t.puntos.length; i<j; i++) {
+				var punto = t.puntos[i];
+				dibujarBezier(svg,punto,3);
+			}
+
+			for(var i=0,j=t.puntos.length; i<j; i++) {
+				var punto = t.puntos[i];
+				dibujarLineasBezier(svg,punto);
+			}
+
+			for(var i=0,j=t.puntos.length; i<j; i++) {
+				var punto = t.puntos[i];
+				dibujarPunto(svg,punto.x,punto.y,3);
+				
+			}
+		}
+
+		function dibujarLinea(svg,anterior,punto) {
+			if(!anterior.bezierSig || !punto.bezierAnt)
+				return;
+			var linea = document.createElementNS('http://www.w3.org/2000/svg','path');
+			var atributoD = 'M'+anterior.x+','+anterior.y+
+				' C'+anterior.bezierSig.cx+','+anterior.bezierSig.cy+
+				' '+punto.bezierAnt.cx+','+punto.bezierAnt.cy+
+				' '+punto.x+','+punto.y;
+			linea.setAttributeNS(null,'d',atributoD);
+			linea.setAttributeNS(null,'stroke','gray');
+			linea.setAttributeNS(null,'stroke-width',2);
+			linea.setAttributeNS(null,'fill','none');
+			svg.appendChild(linea);
+		}
+
+		function dibujarBezier(svg,punto,radio) {
+			if(punto.bezierAnt) {
+				var circulo = document.createElementNS('http://www.w3.org/2000/svg','circle');
+				circulo.setAttributeNS(null,'cx',punto.bezierAnt.cx);
+				circulo.setAttributeNS(null,'cy',punto.bezierAnt.cy);
+				circulo.setAttributeNS(null,'r',radio);
+				circulo.setAttributeNS(null,'fill','purple');
+				svg.appendChild(circulo);
+			}
+			if(punto.bezierSig) {
+				var circulo = document.createElementNS('http://www.w3.org/2000/svg','circle');
+				circulo.setAttributeNS(null,'cx',punto.bezierSig.cx);
+				circulo.setAttributeNS(null,'cy',punto.bezierSig.cy);
+				circulo.setAttributeNS(null,'r',radio);
+				circulo.setAttributeNS(null,'fill','purple');
+				svg.appendChild(circulo);
+			}
+		}
+
+		function dibujarLineasBezier(svg,punto) {
+			if(punto.bezierAnt) {
+				var linea = document.createElementNS('http://www.w3.org/2000/svg','line');
+				linea.setAttributeNS(null,'x1',punto.x);
+				linea.setAttributeNS(null,'y1',punto.y);
+				linea.setAttributeNS(null,'x2',punto.bezierAnt.cx);
+				linea.setAttributeNS(null,'y2',punto.bezierAnt.cy);
+				linea.setAttributeNS(null,'style','stroke:purple;stroke-width:1');
+				svg.appendChild(linea);
+			}
+			if(punto.bezierSig) {
+				var linea = document.createElementNS('http://www.w3.org/2000/svg','line');
+				linea.setAttributeNS(null,'x1',punto.x);
+				linea.setAttributeNS(null,'y1',punto.y);
+				linea.setAttributeNS(null,'x2',punto.bezierSig.cx);
+				linea.setAttributeNS(null,'y2',punto.bezierSig.cy);
+				linea.setAttributeNS(null,'style','stroke:purple;stroke-width:1');
+				svg.appendChild(linea);
+			}
+		}
+
+		function dibujarPunto(svg,x,y,radio) {
+			var punto = document.createElementNS('http://www.w3.org/2000/svg','rect');
+			punto.setAttributeNS(null,'x',x-radio);
+			punto.setAttributeNS(null,'y',y-radio);
+			punto.setAttributeNS(null,'width',radio*2);
+			punto.setAttributeNS(null,'height',radio*2);
+			punto.setAttributeNS(null,'fill','black');
+			svg.appendChild(punto);
+		}
+	</script>
+</body>
+</html>
