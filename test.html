@@ -3,6 +3,10 @@
 <head>
 <title>Mi lienzo SVG</title>
 <link rel="stylesheet" type="text/css" href="css/svg.css" />
+<script type="text/javascript" src="js/iconos.js"></script>
+<script type="text/javascript">
+	var iconos = new ColeccionIconos();
+</script>
 </head>
 <body id="cuerpo">
 	<!-- HEADER -->
@@ -21,7 +25,9 @@
 	</div>
 	<!-- BODY -->
 	<div id="contenido">
-		<div id="barraLateral"></div>
+		<div id="barraLateral">
+			<button id='btnExpandirAbajo'></button>
+		</div>
 		<div id="contenedorLienzo"></div>
 	</div>
 	<!-- FOOTER -->
@@ -30,7 +36,7 @@
 	<script type="text/javascript" src="js/test.js"></script>
 	<script type="text/javascript">
 		window.onload = function() {
-			seleccionar = new Selector('id',['body','div','ul','li','svg','path']);
+			seleccionar = new Selector('id',['body','div','ul','li','svg','path','button']);
 
 			var lienzo = new ServiciosLienzo(seleccionar.contenedorLienzo,{
 				'seleccion':seleccionar.seleccion,
@@ -39,13 +45,18 @@
 				'plumaeliminar':seleccionar.plumaEliminar
 			});
 
-			/*var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-			svg.setAttributeNS(null,'style','width:90vw;height:90vh;');
-
-			trazar(svg,trazo);
-
-			seleccionar.contenedorLienzo.appendChild(svg);*/
+			seleccionar.btnExpandirAbajo.style.width = '5vh';
+			seleccionar.btnExpandirAbajo.style.height = '5vh';
+			agregarReglaCSS(document.styleSheets[0],'#btnExpandirAbajo','background:url("'+
+				iconos.obtenerURL('botones','expandirAbajo',seleccionar.btnExpandirAbajo.offsetWidth,seleccionar.btnExpandirAbajo.offsetHeight)+'")',1);
 		};
+
+		function agregarReglaCSS(hoja,selector,reglas,indice) {
+			if('insertRule' in hoja)
+				hoja.insertRule(selector+'{'+reglas+'}',(indice!==undefined ? 1 : indice));
+			if('addRule' in hoja)
+				hoja.addRule(selector,reglas,(indice!==undefined ? 1 : indice));
+		}
 
 		function trazar(svg,t) {
 			for(var i=0,j=t.puntos.length; i<j; i++) {

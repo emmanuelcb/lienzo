@@ -70,7 +70,7 @@ class ServiciosLienzo {
 		imageSVG.setAttributeNS(null,'height',20);
 		var ubicacionesX = [0,10,0,10];
 		var ubicacionesY = [0,0,10,10];
-		var colores = ['rgb(200,200,200)','rgb(255,255,255)','rgb(255,255,255)','rgb(200,200,200)'];
+		var colores = ['rgb(230,230,255)','rgb(255,255,255)','rgb(255,255,255)','rgb(230,230,255)'];
 		for(var i=0,j=4; i<j; i++) {
 			var cuadrado = document.createElementNS('http://www.w3.org/2000/svg','rect');
 			cuadrado.setAttributeNS(null,'x',ubicacionesX[i]);
@@ -93,7 +93,11 @@ class ServiciosLienzo {
 
 		var nuevoLienzo = document.createElementNS('http://www.w3.org/2000/svg','svg');
 		nuevoLienzo.setAttributeNS(null,'id','lienzo');
-		nuevoLienzo.setAttributeNS(null,'style','background:url("'+url+'");margin: 0 auto;');
+		var hoja = document.styleSheets[0];
+		if('insertRule' in hoja)
+			hoja.insertRule('#lienzo'+'{background:url("'+url+'");margin: 0 auto;}',1);
+		if('addRule' in hoja)
+			hoja.addRule('#lienzo','background:url("'+url+'");margin: 0 auto;',1);
 		this.contenedor.appendChild(nuevoLienzo);
 		this.lienzo = nuevoLienzo;
 	}
@@ -218,7 +222,7 @@ class Punto {
 			throw new Error('Un nuevo punto require de un trazo definido.');
 	}
 	dibujarPunto() {
-		var color = 'black';
+		var color = 'rgb(30,90,10)';
 		var cuadrado = document.createElementNS('http://www.w3.org/2000/svg','rect');
 		cuadrado.setAttributeNS(null,'x',this.x-this.radio);
 		cuadrado.setAttributeNS(null,'y',this.y-this.radio);
