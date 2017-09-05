@@ -43,7 +43,6 @@ class ColeccionIconos {
 			fuente = fuente.replace(/xmlns="http\:\/\/www\.w3\.org\/1999\/xhtml"/, '');
 		fuente = '<?xml version="1.0" standalone="no"?>\r\n' + fuente;
 		var url = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(fuente);
-		console.log(url);
 		return url;
 	}
 }

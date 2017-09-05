@@ -16,6 +16,7 @@ class ServiciosLienzo {
 		this.trazos = {};
 		this.count = 0;
 		this.trazoActivo = undefined;
+		this.puntoActivo = undefined;
 		this.herramientasPermitidas = ['seleccion','selecciondirecta','pluma','plumaeliminar'];
 		this.herramientas = {
 			seleccion : {
@@ -27,22 +28,46 @@ class ServiciosLienzo {
 			selecciondirecta : {
 				valor: 1, 
 				nombre: 'Seleccion directa',
-				abajo: function(este,evento) {},
-				arriba: function(este,evento) {}
-			},
-			mover : {
-				valor: 2,
-				nombre: 'Mover',
-				abajo: function(este,evento) {},
-				arriba:function(este,evento) {}
+				abajo: function(este,evento) {
+					var pos = este.obtenerPosicion(evento);
+					if(este.trazoActivo) {
+						este.trazoActivo.inactivarPuntos();
+						var hayPunto = este.trazoActivo.seleccionaPunto(pos.x,pos.y);
+						if(hayPunto)
+							este.hayPuntoActivo = este.trazoActivo.puntoActivo;
+
+					} else {
+						for(var t in este.trazos) {
+							var trazo = este.trazos[t];
+							var hayPunto = trazo.seleccionaPunto(pos.x,pos.y);
+							if(hayPunto){
+								este.hayPuntoActivo = este.trazoActivo.puntoActivo;
+								break;
+							}
+						}
+					}
+				},
+				arriba: function(este,evento) {
+					if(este.hayPuntoActivo)
+						este.hayPuntoActivo = undefined;
+				}
 			},
 			pluma : {
 				valor: 3,
 				nombre: 'Pluma',
 				abajo: function(este,evento) {
 					var pos = este.obtenerPosicion(evento);
-					if(este.trazoActivo !== undefined)
-						este.trazoActivo.agregarPunto(pos);
+					if(este.trazoActivo !== undefined) {
+						var enAreaActiva;
+						for(var p in este.trazoActivo.puntos) {
+							var punto = este.trazoActivo.puntos[p];
+							enAreaActiva = punto.enAreaActiva(pos.x,pos.y);
+							if(enAreaActiva)
+								break;
+						}
+						if(!enAreaActiva)
+							este.trazoActivo.agregarPunto(pos);
+					}
 					else {
 						este.agregarTrazo(pos);
 					}
@@ -105,6 +130,7 @@ class ServiciosLienzo {
 		// General
 		this.lienzo.addEventListener('mousedown',this.manejadorRatonPresionado(this),false);
 		this.lienzo.addEventListener('mouseup',this.manejadorRatonSuelto(this),false);
+		this.lienzo.addEventListener('mousemove',this.manejadorRatonMoviendo(this),false);
 		// Atajos
 		document.addEventListener('keydown',this.agregarAtajoFuncion(this),false);
 		// Herramientas
@@ -128,6 +154,20 @@ class ServiciosLienzo {
 				este.herramientaActiva.arriba(este,evento);
 		};
 		return ratonSueltoFn;
+	}
+	manejadorRatonMoviendo(este) {
+		var ratonMoviendoFn = function(evento){
+			if(evento.which == 1) {
+				var pos = este.obtenerPosicion(evento);
+				if(este.hayPuntoActivo)
+					este.hayPuntoActivo.mover(pos.x,pos.y);
+				/*for(var p in este.trazoActivo.puntos) {
+					var punto = este.trazoActivo.puntos[p];
+					var enAreaActiva = punto.enAreaActiva(pos.x,pos.y);
+				}*/
+			}
+		};
+		return ratonMoviendoFn;
 	}
 	agregarAtajoFuncion(este) {
 		var fn = function(evento) {
@@ -189,6 +229,25 @@ class Trazo {
 		if(servicios == null || servicios === undefined)
 			throw new Error('Un nuevo trazo require de un servicio.');
 	}
+	inactivarPuntos() {
+		for(var p in this.puntos) {
+			this.puntos[p].elemento.setAttributeNS(null,'fill','rgb(30,90,10)');
+		}
+	}
+	seleccionaPunto(x,y) {
+		var hayPunto = false;
+		for(var p in this.puntos) {
+			var punto = this.puntos[p];
+			if(punto.enAreaActiva(x,y)) {
+				punto.elemento.setAttributeNS(null,'fill','rgb(250,120,10)');
+				this.servicios.trazoActivo = this;
+				this.puntoActivo = punto;
+				hayPunto = true;
+				break;
+			}
+		}
+		return hayPunto;
+	}
 	agregarPunto(pos) {
 		var hayInicial = this.puntos.length > 0 ? false : true;
 		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, hayInicial, this);
@@ -230,12 +289,36 @@ class Punto {
 		cuadrado.setAttributeNS(null,'height',this.radio*2);
 		cuadrado.setAttributeNS(null,'fill',color);
 		this.trazo.servicios.lienzo.appendChild(cuadrado);
+		this.elemento = cuadrado;
+	}
+	reubicarPunto() {
+		this.elemento.setAttributeNS(null,'x',this.x-this.radio);
+		this.elemento.setAttributeNS(null,'y',this.y-this.radio);
+	}
+	enAreaActiva(x,y) {
+		return x < (this.x + this.radio) && 
+		x > (this.x - this.radio) &&
+		y < (this.y + this.radio) &&
+		y > (this.y - this.radio) ? true : false;
 	}
 	agregarBezier(tipoBezier,punto) {
 		if(tipoBezier == 'anterior')
 			this.bezierAnt = new Bezier(this.x+5,this.y+5,this);
 		else
 			this.bezierSig = new Bezier(this.x+5,this.y+5,this);
+	}
+	mover(x,y) {
+		this.compensar('x',x);
+		this.compensar('y',y);
+		this.reubicarPunto();
+	}
+	compensar(coordenada,valor) {
+		var diferencia = (this[coordenada] - valor)*-1;
+		this[coordenada] = this[coordenada] + diferencia;
+		if(this.bezierAnt)
+			this.bezierAnt['c'+coordenada] = this.bezierAnt['c'+coordenada] + diferencia;
+		if(this.bezierSig)
+			this.bezierSig['c'+coordenada] = this.bezierSig['c'+coordenada] + diferencia;
 	}
 }
 class Bezier {
