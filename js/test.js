@@ -77,7 +77,15 @@ class ServiciosLienzo {
 			plumaeliminar : {
 				valor: 4,
 				nombre: 'Pluma eliminar puntos',
-				abajo: function(este,evento) {},
+				abajo: function(este,evento) {
+					var pos = este.obtenerPosicion(evento);
+					if(este.trazoActivo) {
+						var hayPunto = este.trazoActivo.seleccionaPunto(pos.x,pos.y);
+						if(hayPunto)
+							este.trazoActivo.puntoActivo.eliminar();
+
+					}
+				},
 				arriba: function(este,evento) {}
 			}
 		}
@@ -144,7 +152,6 @@ class ServiciosLienzo {
 		var ratonPresionadoFn = function(evento){
 			if(evento.which == 1)
 				este.herramientaActiva.abajo(este,evento);
-
 		};
 		return ratonPresionadoFn;
 	}
@@ -161,10 +168,6 @@ class ServiciosLienzo {
 				var pos = este.obtenerPosicion(evento);
 				if(este.hayPuntoActivo)
 					este.hayPuntoActivo.mover(pos.x,pos.y);
-				/*for(var p in este.trazoActivo.puntos) {
-					var punto = este.trazoActivo.puntos[p];
-					var enAreaActiva = punto.enAreaActiva(pos.x,pos.y);
-				}*/
 			}
 		};
 		return ratonMoviendoFn;
@@ -250,14 +253,14 @@ class Trazo {
 	}
 	agregarPunto(pos) {
 		var hayInicial = this.puntos.length > 0 ? false : true;
-		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, hayInicial, this);
+		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, hayInicial, this, this.puntoActivo);
 		this.puntoActivo = this.puntos[this.count];
 		this.count++;
 	}
 }
 class Punto {
-	constructor(id,x,y,inicial,trazo) {
-		this.validarParametros(id,x,y,inicial,trazo);
+	constructor(id,x,y,inicial,trazo,anterior) {
+		this.validarParametros(id,x,y,inicial,trazo,anterior);
 		this.id = id;
 		this.x = x;
 		this.y = y;
@@ -266,11 +269,15 @@ class Punto {
 		this.bezierSig = undefined;
 		this.trazo = trazo;
 		this.radio = 3;
+		this.radioActivo = 6;
 		this.dibujarPunto();
-		if(this.trazo.puntos[id-1])
-			this.dibujarLinea(this.trazo.puntos[id-1]);
+		if(anterior) { //this.trazo.puntos[id-1]
+			this.anterior = anterior;
+			this.anterior.siguiente = this;
+			this.dibujarLinea();
+		}
 	}
-	validarParametros(id,x,y,inicial,trazo) {
+	validarParametros(id,x,y,inicial,trazo,anterior) {
 		if(id == null || id === undefined)
 			throw new Error('Para crear un nuevo punto requires de un id.');
 		if(x == null || x === undefined)
@@ -281,6 +288,10 @@ class Punto {
 			throw new Error('Para crear un nuevo punto necesitas especificar si es el punto inicial.');
 		if(trazo == null || trazo === undefined)
 			throw new Error('Un nuevo punto require de un trazo definido.');
+		if(anterior) {
+			if(anterior.siguiente)
+				throw new Error('No se puede continuar el trazo desde este punto, selecciona el punto correcto.');
+		}
 	}
 	dibujarPunto() {
 		var color = 'rgb(30,90,10)';
@@ -293,27 +304,44 @@ class Punto {
 		this.trazo.servicios.lienzo.appendChild(cuadrado);
 		this.elemento = cuadrado;
 	}
-	dibujarLinea(anterior) {
+	dibujarLinea() {
+		var color = 'rgb(30,90,10)';
 		var linea = document.createElementNS('http://www.w3.org/2000/svg','path');
-		var atributoD = 'M'+anterior.x+','+anterior.y+
-			(anterior.bezierSig ? (' C'+anterior.bezierSig.cx+','+anterior.bezierSig.cy) : (' C'+anterior.x+','+anterior.y))+
-			(this.bezierAnt ? (' '+this.bezierAnt.cx+','+this.bezierAnt.cy) : (' '+this.x+','+this.y))+
+		var atributoD = 'M'+this.anterior.x+','+this.anterior.y+
+			(this.anterior.bezierSig ? (
+				' C'+this.anterior.bezierSig.cx+','+this.anterior.bezierSig.cy) : (
+				' C'+this.anterior.x+','+this.anterior.y))+
+			(this.bezierAnt ? (
+				' '+this.bezierAnt.cx+','+this.bezierAnt.cy) : (
+				' '+this.x+','+this.y))+
 			' '+this.x+','+this.y;
 		linea.setAttributeNS(null,'d',atributoD);
-		linea.setAttributeNS(null,'stroke','gray');
+		linea.setAttributeNS(null,'stroke',color);
 		linea.setAttributeNS(null,'stroke-width',2);
 		linea.setAttributeNS(null,'fill','none');
 		this.trazo.servicios.lienzo.appendChild(linea);
+		this.linea = linea;
 	}
 	reubicarPunto() {
 		this.elemento.setAttributeNS(null,'x',this.x-this.radio);
 		this.elemento.setAttributeNS(null,'y',this.y-this.radio);
 	}
+	reubicarLinea() {
+		var atributoD = 'M'+this.anterior.x+','+this.anterior.y+
+			(this.anterior.bezierSig ? (
+				' C'+this.anterior.bezierSig.cx+','+this.anterior.bezierSig.cy) : (
+				' C'+this.anterior.x+','+this.anterior.y))+
+			(this.bezierAnt ? (
+				' '+this.bezierAnt.cx+','+this.bezierAnt.cy) : (
+				' '+this.x+','+this.y))+
+			' '+this.x+','+this.y;
+		this.linea.setAttributeNS(null,'d',atributoD);
+	}
 	enAreaActiva(x,y) {
-		return x < (this.x + this.radio) &&
-		x > (this.x - this.radio) &&
-		y < (this.y + this.radio) &&
-		y > (this.y - this.radio) ? true : false;
+		return x < (this.x + this.radioActivo) &&
+		x > (this.x - this.radioActivo) &&
+		y < (this.y + this.radioActivo) &&
+		y > (this.y - this.radioActivo) ? true : false;
 	}
 	agregarBezier(tipoBezier,punto) {
 		if(tipoBezier == 'anterior')
@@ -325,6 +353,10 @@ class Punto {
 		this.compensar('x',x);
 		this.compensar('y',y);
 		this.reubicarPunto();
+		if(this.linea)
+			this.reubicarLinea();
+		if(this.siguiente)
+			this.siguiente.reubicarLinea();
 	}
 	compensar(coordenada,valor) {
 		var diferencia = (this[coordenada] - valor)*-1;
@@ -333,6 +365,17 @@ class Punto {
 			this.bezierAnt['c'+coordenada] = this.bezierAnt['c'+coordenada] + diferencia;
 		if(this.bezierSig)
 			this.bezierSig['c'+coordenada] = this.bezierSig['c'+coordenada] + diferencia;
+	}
+	eliminar() {
+		var padreLinea = this.linea.parentElement;
+		var padrePunto = this.elemento.parentElement;
+		padrePunto.removeChild(this.elemento);
+		padreLinea.removeChild(this.linea);
+		if(this.siguiente && this.anterior) {
+			this.siguiente.anterior = this.anterior;
+			this.siguiente.reubicarLinea();
+			delete this.trazo.puntos[this.id];
+		}
 	}
 }
 class Bezier {
