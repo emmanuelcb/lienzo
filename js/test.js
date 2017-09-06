@@ -20,13 +20,13 @@ class ServiciosLienzo {
 		this.herramientasPermitidas = ['seleccion','selecciondirecta','pluma','plumaeliminar'];
 		this.herramientas = {
 			seleccion : {
-				valor: 0, 
+				valor: 0,
 				nombre: 'Seleccion',
 				abajo: function(este,evento) {},
 				arriba: function(este,evento) {}
 			},
 			selecciondirecta : {
-				valor: 1, 
+				valor: 1,
 				nombre: 'Seleccion directa',
 				abajo: function(este,evento) {
 					var pos = este.obtenerPosicion(evento);
@@ -202,7 +202,7 @@ class ServiciosLienzo {
 			x -= this.lienzo.parentElement.offsetLeft;
 			y -= this.lienzo.parentElement.offsetTop;
 		}
-		
+
 		return {x:x,y:y};
 	}
 	agregarTrazo(pos) {
@@ -267,6 +267,8 @@ class Punto {
 		this.trazo = trazo;
 		this.radio = 3;
 		this.dibujarPunto();
+		if(this.trazo.puntos[id-1])
+			this.dibujarLinea(this.trazo.puntos[id-1]);
 	}
 	validarParametros(id,x,y,inicial,trazo) {
 		if(id == null || id === undefined)
@@ -291,12 +293,24 @@ class Punto {
 		this.trazo.servicios.lienzo.appendChild(cuadrado);
 		this.elemento = cuadrado;
 	}
+	dibujarLinea(anterior) {
+		var linea = document.createElementNS('http://www.w3.org/2000/svg','path');
+		var atributoD = 'M'+anterior.x+','+anterior.y+
+			(anterior.bezierSig ? (' C'+anterior.bezierSig.cx+','+anterior.bezierSig.cy) : (' C'+anterior.x+','+anterior.y))+
+			(this.bezierAnt ? (' '+this.bezierAnt.cx+','+this.bezierAnt.cy) : (' '+this.x+','+this.y))+
+			' '+this.x+','+this.y;
+		linea.setAttributeNS(null,'d',atributoD);
+		linea.setAttributeNS(null,'stroke','gray');
+		linea.setAttributeNS(null,'stroke-width',2);
+		linea.setAttributeNS(null,'fill','none');
+		this.trazo.servicios.lienzo.appendChild(linea);
+	}
 	reubicarPunto() {
 		this.elemento.setAttributeNS(null,'x',this.x-this.radio);
 		this.elemento.setAttributeNS(null,'y',this.y-this.radio);
 	}
 	enAreaActiva(x,y) {
-		return x < (this.x + this.radio) && 
+		return x < (this.x + this.radio) &&
 		x > (this.x - this.radio) &&
 		y < (this.y + this.radio) &&
 		y > (this.y - this.radio) ? true : false;
