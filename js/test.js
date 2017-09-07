@@ -175,9 +175,11 @@ class ServiciosLienzo {
 	agregarAtajoFuncion(este) {
 		var fn = function(evento) {
 			var tecla = evento.key;
-			if(este.atajos[tecla.toUpperCase()]) {
-				var herramienta = este.atajos[tecla.toUpperCase()];
+			var atajo = evento.altKey ? 'Alt'+tecla.toUpperCase() : tecla.toUpperCase();
+			if(este.atajos[atajo]) {
+				var herramienta = este.atajos[atajo];
 				este.herramientaActiva = este.herramientas[herramienta];
+				console.log([atajo,este.herramientaActiva]);
 			}
 		}
 		return fn;
@@ -217,11 +219,12 @@ class ServiciosLienzo {
 class Trazo {
 	constructor(id,pos,servicios) {
 		this.validarParametros(id,pos,servicios);
-		this.id = id;
+		this.id = 'trazo'+id;
 		this.puntos = {};
 		this.count = 0;
 		this.puntoActivo;
 		this.servicios = servicios;
+		this.esNuevo = true;
 		this.agregarPunto(pos);
 	}
 	validarParametros(id,pos,servicios) {
@@ -234,7 +237,7 @@ class Trazo {
 	}
 	inactivarPuntos() {
 		for(var p in this.puntos) {
-			this.puntos[p].elemento.setAttributeNS(null,'fill','rgb(30,90,10)');
+			this.puntos[p].punto.setAttributeNS(null,'fill','rgb(30,90,10)');
 		}
 	}
 	seleccionaPunto(x,y) {
@@ -242,7 +245,7 @@ class Trazo {
 		for(var p in this.puntos) {
 			var punto = this.puntos[p];
 			if(punto.enAreaActiva(x,y)) {
-				punto.elemento.setAttributeNS(null,'fill','rgb(250,120,10)');
+				punto.punto.setAttributeNS(null,'fill','rgb(250,120,10)');
 				this.servicios.trazoActivo = this;
 				this.puntoActivo = punto;
 				hayPunto = true;
@@ -252,10 +255,60 @@ class Trazo {
 		return hayPunto;
 	}
 	agregarPunto(pos) {
-		var hayInicial = this.puntos.length > 0 ? false : true;
-		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, hayInicial, this, this.puntoActivo);
+		if(this.esNuevo) {
+			this.esNuevo = false;
+			this.empezarTrazo();
+		}
+		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, this.esNuevo, this, this.puntoActivo);
 		this.puntoActivo = this.puntos[this.count];
 		this.count++;
+		if(this.trazo)
+			this.retrazar();
+		else
+			this.trazar();
+	}
+	empezarTrazo() {
+		var grupoTrazo = document.createElementNS('http://www.w3.org/2000/svg','g');
+		grupoTrazo.setAttributeNS(null,'id','g'+this.id);
+		this.servicios.lienzo.appendChild(grupoTrazo);
+		this.grupoTrazo = grupoTrazo;
+	}
+	trazar() {
+		var color = 'rgb(200,200,200)';
+		var trazo = document.createElementNS('http://www.w3.org/2000/svg','path');
+		var cadenaD = this.obtenerD();
+		trazo.setAttributeNS(null,'d',cadenaD);
+		trazo.setAttributeNS(null,'id',this.id);
+		trazo.setAttributeNS(null,'style','fill:'+color+';');
+		this.grupoTrazo.appendChild(trazo);
+		this.trazo = trazo;
+	}
+	retrazar() {
+		var cadenaD = this.obtenerD();
+		this.trazo.setAttributeNS(null,'d',cadenaD);
+	}
+	obtenerD() {
+		var cadenaD = '';
+		var puntoAnterior;
+		for(var p in this.puntos) {
+			var punto = this.puntos[p];
+			if(punto.eliminado)
+				continue;
+			if(cadenaD=='') {
+				cadenaD += 'M'+punto.x+','+punto.y+' ';
+				puntoAnterior = punto;
+				continue;
+			}
+			if(punto.bezierAnt && puntoAnterior.bezierSig) {
+				cadenaD += 'C'+puntoAnterior.bezierSig.cx+','+puntoAnterior.bezierSig.cy;
+				cadenaD += ' '+punto.bezierAnt.cx+','+punto.bezierAnt.cy;
+				cadenaD += ' '+punto.x+','+punto.y+' ';
+			} else {
+				cadenaD += 'L'+punto.x+','+punto.y+' ';
+			}
+			puntoAnterior = punto;
+		}
+		return cadenaD;
 	}
 }
 class Punto {
@@ -270,8 +323,9 @@ class Punto {
 		this.trazo = trazo;
 		this.radio = 3;
 		this.radioActivo = 6;
+		this.eliminado = false;
 		this.dibujarPunto();
-		if(anterior) { //this.trazo.puntos[id-1]
+		if(anterior) {
 			this.anterior = anterior;
 			this.anterior.siguiente = this;
 			this.dibujarLinea();
@@ -301,8 +355,8 @@ class Punto {
 		cuadrado.setAttributeNS(null,'width',this.radio*2);
 		cuadrado.setAttributeNS(null,'height',this.radio*2);
 		cuadrado.setAttributeNS(null,'fill',color);
-		this.trazo.servicios.lienzo.appendChild(cuadrado);
-		this.elemento = cuadrado;
+		this.trazo.grupoTrazo.appendChild(cuadrado);
+		this.punto = cuadrado;
 	}
 	dibujarLinea() {
 		var color = 'rgb(30,90,10)';
@@ -319,12 +373,12 @@ class Punto {
 		linea.setAttributeNS(null,'stroke',color);
 		linea.setAttributeNS(null,'stroke-width',2);
 		linea.setAttributeNS(null,'fill','none');
-		this.trazo.servicios.lienzo.appendChild(linea);
+		this.trazo.grupoTrazo.appendChild(linea);
 		this.linea = linea;
 	}
 	reubicarPunto() {
-		this.elemento.setAttributeNS(null,'x',this.x-this.radio);
-		this.elemento.setAttributeNS(null,'y',this.y-this.radio);
+		this.punto.setAttributeNS(null,'x',this.x-this.radio);
+		this.punto.setAttributeNS(null,'y',this.y-this.radio);
 	}
 	reubicarLinea() {
 		var atributoD = 'M'+this.anterior.x+','+this.anterior.y+
@@ -357,6 +411,7 @@ class Punto {
 			this.reubicarLinea();
 		if(this.siguiente)
 			this.siguiente.reubicarLinea();
+		this.trazo.retrazar();
 	}
 	compensar(coordenada,valor) {
 		var diferencia = (this[coordenada] - valor)*-1;
@@ -368,13 +423,15 @@ class Punto {
 	}
 	eliminar() {
 		var padreLinea = this.linea.parentElement;
-		var padrePunto = this.elemento.parentElement;
-		padrePunto.removeChild(this.elemento);
+		var padrePunto = this.punto.parentElement;
+		padrePunto.removeChild(this.punto);
 		padreLinea.removeChild(this.linea);
 		if(this.siguiente && this.anterior) {
 			this.siguiente.anterior = this.anterior;
+			this.anterior.siguiente = this.siguiente;
 			this.siguiente.reubicarLinea();
-			delete this.trazo.puntos[this.id];
+			this.eliminado = true;
+			this.trazo.retrazar();
 		}
 	}
 }
@@ -394,67 +451,3 @@ class Bezier {
 		this.punto.trazo.servicios.lienzo.appendChild(circulo);
 	}
 }
-
-var trazo = {
-	puntos: [
-		{
-			x: 200,
-			y: 100,
-			inicial: true,
-			bezierAnt: undefined,
-			bezierSig: {
-				cx: 250,
-				cy: 100
-			}
-		},
-		{
-			x: 300,
-			y: 200,
-			inicial: false,
-			bezierAnt: {
-				cx: 300,
-				cy: 150
-			},
-			bezierSig: {
-				cx: 300,
-				cy: 250
-			}
-		},
-		{
-			x: 200,
-			y: 300,
-			inicial: false,
-			bezierAnt: {
-				cx: 250,
-				cy: 300
-			},
-			bezierSig: {
-				cx: 150,
-				cy: 300
-			}
-		},
-		{
-			x: 100,
-			y: 200,
-			inicial: false,
-			bezierAnt: {
-				cx: 100,
-				cy: 250
-			},
-			bezierSig: {
-				cx: 100,
-				cy: 150
-			}
-		},
-		{
-			x: 200,
-			y: 100,
-			inicial: false,
-			bezierAnt: {
-				cx: 150,
-				cy: 100
-			},
-			bezierSig: undefined
-		}
-	]
-};
