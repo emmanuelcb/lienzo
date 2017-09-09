@@ -422,10 +422,18 @@ class Punto {
 			this.bezierSig['c'+coordenada] = this.bezierSig['c'+coordenada] + diferencia;
 	}
 	eliminar() {
-		var padreLinea = this.linea.parentElement;
+		var padreLinea = this.linea ? this.linea.parentElement : undefined;
 		var padrePunto = this.punto.parentElement;
 		padrePunto.removeChild(this.punto);
-		padreLinea.removeChild(this.linea);
+		if(padreLinea)
+			padreLinea.removeChild(this.linea);
+		if(this.inicial) {
+			this.siguiente.anterior = undefined;
+			this.siguiente.inicial = true;
+			this.siguiente.linea.parentElement.removeChild(this.siguiente.linea);
+			this.eliminado = true;
+			this.trazo.retrazar();
+		}
 		if(this.siguiente && this.anterior) {
 			this.siguiente.anterior = this.anterior;
 			this.anterior.siguiente = this.siguiente;
