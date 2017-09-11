@@ -22,71 +22,76 @@ class ServiciosLienzo {
 			seleccion : {
 				valor: 0,
 				nombre: 'Seleccion',
-				abajo: function(este,evento) {},
-				arriba: function(este,evento) {}
+				abajo: function(servicios,evento) {},
+				arriba: function(servicios,evento) {}
 			},
 			selecciondirecta : {
 				valor: 1,
 				nombre: 'Seleccion directa',
-				abajo: function(este,evento) {
-					var pos = este.obtenerPosicion(evento);
-					if(este.trazoActivo) {
-						este.trazoActivo.inactivarPuntos();
-						var hayPunto = este.trazoActivo.seleccionaPunto(pos.x,pos.y);
-						if(hayPunto)
-							este.hayPuntoActivo = este.trazoActivo.puntoActivo;
-
+				abajo: function(servicios,evento) {
+					var pos = servicios.obtenerPosicion(evento);
+					if(servicios.trazoActivo) {
+						servicios.trazoActivo.inactivarPuntos();
+						var resultado = servicios.trazoActivo.seleccionaPuntos(pos.x,pos.y);
+						if(resultado.hayPuntos) {
+							servicios.hayPuntosActivos = resultado.puntos;
+						}
 					} else {
-						for(var t in este.trazos) {
-							var trazo = este.trazos[t];
-							var hayPunto = trazo.seleccionaPunto(pos.x,pos.y);
-							if(hayPunto){
-								este.hayPuntoActivo = este.trazoActivo.puntoActivo;
+						for(var t in servicios.trazos) {
+							var trazo = servicios.trazos[t];
+							var resultado = trazo.seleccionaPuntos(pos.x,pos.y);
+							if(resultado.hayPuntos){
+								servicios.hayPuntosActivos = resultado.puntos;
 								break;
 							}
 						}
 					}
 				},
-				arriba: function(este,evento) {
-					if(este.hayPuntoActivo)
-						este.hayPuntoActivo = undefined;
+				arriba: function(servicios,evento) {
+					if(servicios.hayPuntosActivos)
+						servicios.hayPuntosActivos = undefined;
 				}
 			},
 			pluma : {
 				valor: 3,
 				nombre: 'Pluma',
-				abajo: function(este,evento) {
-					var pos = este.obtenerPosicion(evento);
-					if(este.trazoActivo !== undefined) {
-						var enAreaActiva;
-						for(var p in este.trazoActivo.puntos) {
-							var punto = este.trazoActivo.puntos[p];
-							enAreaActiva = punto.enAreaActiva(pos.x,pos.y);
-							if(enAreaActiva)
-								break;
+				abajo: function(servicios,evento) {
+					var pos = servicios.obtenerPosicion(evento);
+					if(servicios.trazoActivo !== undefined) {
+						if(!servicios.trazoActivo.completado) {
+							var resultado;
+							for(var p in servicios.trazoActivo.puntos) {
+								var punto = servicios.trazoActivo.puntos[p];
+								resultado = punto.enAreaActiva(pos.x,pos.y);
+								if(resultado.enAreaActiva)
+									break;
+							}
+							if(!resultado.enAreaActiva)
+								servicios.trazoActivo.agregarPunto(pos,false);
+							else if(resultado.enAreaActiva && resultado.esInicial){
+								servicios.trazoActivo.agregarPunto({x:resultado.punto.x,y:resultado.punto.y},true);
+							}
 						}
-						if(!enAreaActiva)
-							este.trazoActivo.agregarPunto(pos);
 					}
 					else {
-						este.agregarTrazo(pos);
+						servicios.agregarTrazo(pos);
 					}
 				},
-				arriba: function(este,evento) {}
+				arriba: function(servicios,evento) {}
 			},
 			plumaeliminar : {
 				valor: 4,
 				nombre: 'Pluma eliminar puntos',
-				abajo: function(este,evento) {
-					var pos = este.obtenerPosicion(evento);
-					if(este.trazoActivo) {
-						var hayPunto = este.trazoActivo.seleccionaPunto(pos.x,pos.y);
+				abajo: function(servicios,evento) {
+					var pos = servicios.obtenerPosicion(evento);
+					if(servicios.trazoActivo) {
+						var hayPunto = servicios.trazoActivo.seleccionaPunto(pos.x,pos.y);
 						if(hayPunto)
-							este.trazoActivo.puntoActivo.eliminar();
+							servicios.trazoActivo.puntoActivo.eliminar();
 
 					}
 				},
-				arriba: function(este,evento) {}
+				arriba: function(servicios,evento) {}
 			}
 		}
 		this.herramientaActiva = this.herramientas.pluma;
@@ -148,45 +153,49 @@ class ServiciosLienzo {
 			}
 		}
 	}
-	manejadorRatonPresionado(este) {
+	manejadorRatonPresionado(servicios) {
 		var ratonPresionadoFn = function(evento){
-			if(evento.which == 1)
-				este.herramientaActiva.abajo(este,evento);
+			if(evento.which == 1) {
+				servicios.ratonPresionado = true;
+				servicios.herramientaActiva.abajo(servicios,evento);
+			}
 		};
 		return ratonPresionadoFn;
 	}
-	manejadorRatonSuelto(este) {
+	manejadorRatonSuelto(servicios) {
 		var ratonSueltoFn = function(evento){
-			if(evento.which == 1)
-				este.herramientaActiva.arriba(este,evento);
+			if(evento.which == 1) {
+				servicios.ratonPresionado = false;
+				servicios.herramientaActiva.arriba(servicios,evento);
+			}
 		};
 		return ratonSueltoFn;
 	}
-	manejadorRatonMoviendo(este) {
+	manejadorRatonMoviendo(servicios) {
 		var ratonMoviendoFn = function(evento){
 			if(evento.which == 1) {
-				var pos = este.obtenerPosicion(evento);
-				if(este.hayPuntoActivo)
-					este.hayPuntoActivo.mover(pos.x,pos.y);
+				var pos = servicios.obtenerPosicion(evento);
+				if(servicios.hayPuntosActivos && servicios.ratonPresionado)
+					servicios.moverPuntos(pos.x,pos.y);
 			}
 		};
 		return ratonMoviendoFn;
 	}
-	agregarAtajoFuncion(este) {
+	agregarAtajoFuncion(servicios) {
 		var fn = function(evento) {
 			var tecla = evento.key;
 			var atajo = evento.altKey ? 'Alt'+tecla.toUpperCase() : tecla.toUpperCase();
-			if(este.atajos[atajo]) {
-				var herramienta = este.atajos[atajo];
-				este.herramientaActiva = este.herramientas[herramienta];
-				console.log([atajo,este.herramientaActiva]);
+			if(servicios.atajos[atajo]) {
+				var herramienta = servicios.atajos[atajo];
+				servicios.herramientaActiva = servicios.herramientas[herramienta];
+				console.log([atajo,servicios.herramientaActiva]);
 			}
 		}
 		return fn;
 	}
-	agregaFuncion(este,herramienta) {
+	agregaFuncion(servicios,herramienta) {
 		var fn = function(evento){
-			este.herramientaActiva = este.herramientas[herramienta];
+			servicios.herramientaActiva = servicios.herramientas[herramienta];
 		}
 		return fn;
 	}
@@ -215,6 +224,12 @@ class ServiciosLienzo {
 		this.trazoActivo = this.trazos[this.count];
 		this.count++;
 	}
+	moverPuntos(x,y) {
+		for(var p in this.hayPuntosActivos) {
+			var punto = this.hayPuntosActivos[p];
+			punto.mover(x,y);
+		}
+	}
 }
 class Trazo {
 	constructor(id,pos,servicios) {
@@ -225,6 +240,7 @@ class Trazo {
 		this.puntoActivo;
 		this.servicios = servicios;
 		this.esNuevo = true;
+		this.completado = false;
 		this.agregarPunto(pos);
 	}
 	validarParametros(id,pos,servicios) {
@@ -240,23 +256,24 @@ class Trazo {
 			this.puntos[p].punto.setAttributeNS(null,'fill','rgb(30,90,10)');
 		}
 	}
-	seleccionaPunto(x,y) {
-		var hayPunto = false;
+	seleccionaPuntos(x,y) {
+		var hayPuntos = false;
+		var puntos = [];
 		for(var p in this.puntos) {
 			var punto = this.puntos[p];
-			if(punto.enAreaActiva(x,y)) {
+			var resultado = punto.enAreaActiva(x,y);
+			if(resultado.enAreaActiva) {
 				punto.punto.setAttributeNS(null,'fill','rgb(250,120,10)');
-				this.servicios.trazoActivo = this;
-				this.puntoActivo = punto;
-				hayPunto = true;
-				break;
+				//this.servicios.trazoActivo = this;
+				//this.puntoActivo = punto;
+				hayPuntos = true;
+				puntos.push(punto);
 			}
 		}
-		return hayPunto;
+		return {'hayPuntos':hayPuntos,'puntos':puntos};
 	}
-	agregarPunto(pos) {
+	agregarPunto(pos,esInicial) {
 		if(this.esNuevo) {
-			this.esNuevo = false;
 			this.empezarTrazo();
 		}
 		this.puntos[this.count] = new Punto(this.count, pos.x, pos.y, this.esNuevo, this, this.puntoActivo);
@@ -266,6 +283,9 @@ class Trazo {
 			this.retrazar();
 		else
 			this.trazar();
+		this.esNuevo = false;
+		if(esInicial)
+			this.completado = true;
 	}
 	empezarTrazo() {
 		var grupoTrazo = document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -280,8 +300,21 @@ class Trazo {
 		trazo.setAttributeNS(null,'d',cadenaD);
 		trazo.setAttributeNS(null,'id',this.id);
 		trazo.setAttributeNS(null,'style','fill:'+color+';');
+		trazo.addEventListener('click',this.agregarFuncion(this.servicios,this,'click'));
 		this.grupoTrazo.appendChild(trazo);
 		this.trazo = trazo;
+	}
+	agregarFuncion(servicios,trazo,accion) {
+		var Fn;
+		switch(accion) {
+			case 'click':
+				Fn = function(evento) {
+					if(servicios.herramientaActiva.valor == 0) {
+						servicios.trazoActivo = trazo;
+					}
+				};
+		}
+		return Fn;
 	}
 	retrazar() {
 		var cadenaD = this.obtenerD();
@@ -395,7 +428,7 @@ class Punto {
 		return x < (this.x + this.radioActivo) &&
 		x > (this.x - this.radioActivo) &&
 		y < (this.y + this.radioActivo) &&
-		y > (this.y - this.radioActivo) ? true : false;
+		y > (this.y - this.radioActivo) ? {'enAreaActiva':true,'esInicial':this.inicial,'punto':this} : {'enAreaActiva':false};
 	}
 	agregarBezier(tipoBezier,punto) {
 		if(tipoBezier == 'anterior')
