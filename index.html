@@ -1,0 +1,67 @@
+<!DOCTYPE html />
+<html>
+<head>
+<title>Mi lienzo SVG</title>
+<link rel="stylesheet" type="text/css" href="css/svg.css" />
+<script type="text/javascript" src="js/modulos/Iconos.js"></script>
+<script type="text/javascript">
+	var iconos = new ColeccionIconos();
+</script>
+</head>
+<body id="cuerpo">
+	<!-- HEADER -->
+	<div id="barraHerramientas">
+		<ul>
+			<li>
+				Herramientas
+				<ul>
+					<li id="seleccion" title="Seleccion (V)">Seleccion</li>
+					<li id="seleccionDirecta" title="Seleccion Directa (A)">Seleccion Directa</li>
+					<li id="pluma" title="Pluma (P)">Pluma</li>
+					<li id="plumaEliminar" title="Pluma Eliminar (Alt + P)">Pluma Eliminar</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	<!-- BODY -->
+	<div id="contenido">
+		<div id="barraLateral">
+			<button id='btnExpandirAbajo'></button>
+		</div>
+		<div id="contenedorLienzo"></div>
+	</div>
+	<!-- FOOTER -->
+	<div id="barraEstado"></div>
+	<script type="text/javascript" src="js/modulos/Selector.js"></script>
+	<script type="text/javascript" src="js/modulos/ServiciosLienzo.js"></script>
+	<script type="text/javascript" src="js/modulos/Herramientas.js"></script>
+	<script type="text/javascript" src="js/modulos/Trazo.js"></script>
+	<script type="text/javascript" src="js/modulos/Punto.js"></script>
+	<script type="text/javascript" src="js/modulos/Bezier.js"></script>
+	<script type="text/javascript">
+		var seleccionar;
+		window.onload = function() {
+			seleccionar = Selector('id',['body','div','ul','li','svg','path','button']);
+
+			var lienzo = ServiciosLienzo(seleccionar.contenedorLienzo,{
+				'seleccion':seleccionar.seleccion,
+				'selecciondirecta':seleccionar.seleccionDirecta,
+				'pluma':seleccionar.pluma,
+				'plumaeliminar':seleccionar.plumaEliminar
+			});
+
+			seleccionar.btnExpandirAbajo.style.width = '5vh';
+			seleccionar.btnExpandirAbajo.style.height = '5vh';
+			agregarReglaCSS(document.styleSheets[0],'#btnExpandirAbajo','background:url("'+
+				iconos.obtenerURL('botones','expandirAbajo',seleccionar.btnExpandirAbajo.offsetWidth,seleccionar.btnExpandirAbajo.offsetHeight)+'")',1);
+		};
+
+		function agregarReglaCSS(hoja,selector,reglas,indice) {
+			if('insertRule' in hoja)
+				hoja.insertRule(selector+'{'+reglas+'}',(indice!==undefined ? 1 : indice));
+			if('addRule' in hoja)
+				hoja.addRule(selector,reglas,(indice!==undefined ? 1 : indice));
+		}
+	</script>
+</body>
+</html>
