@@ -1,6 +1,7 @@
 var Herramientas = function(servicios,herramientas) {
 	var h = {
 		inicializar: function(servicios,herramientas) {
+			this.servicios = servicios;
 			this.permitidas = ['seleccion','selecciondirecta','pluma','plumaeliminar'];
 			this.atajos = {
 				V : 'seleccion',
@@ -74,7 +75,7 @@ var Herramientas = function(servicios,herramientas) {
 				abajo: function(servicios,evento) {
 					var pos = servicios.obtenerPosicion(evento);
 					if(servicios.trazoActivo) {
-						var hayPunto = servicios.trazoActivo.seleccionaPunto(pos.x,pos.y);
+						var hayPunto = servicios.trazoActivo.seleccionaPuntos(pos.x,pos.y);
 						if(hayPunto)
 							servicios.trazoActivo.puntoActivo.eliminar();
 
@@ -82,7 +83,7 @@ var Herramientas = function(servicios,herramientas) {
 				},
 				arriba: function(servicios,evento) {}
 			};
-			this.agregarEventos(servicios,herramientas);
+			this.agregarEventos(this.servicios,herramientas);
 		},
 		agregarEventos: function(servicios,herramientas) {
 			// Atajos
@@ -92,17 +93,20 @@ var Herramientas = function(servicios,herramientas) {
 				if(servicios.herramientas.atajos[atajo]) {
 					var herramienta = servicios.herramientas.atajos[atajo];
 					servicios.herramientaActiva = servicios.herramientas[herramienta];
-					console.log([atajo,servicios.herramientaActiva]);
 				}
 			},false);
 			// Herramientas
 			for(var herramienta in herramientas) {
 				if(this.permitidas.indexOf(herramienta) !== -1) {
-					herramientas[herramienta].addEventListener('click',function(evento) {
-						servicios.herramientaActiva = servicios.herramientas[herramienta];
-					},false);
+					herramientas[herramienta].addEventListener('click',this.agregaFuncion(servicios,herramienta),false);
 				}
 			}
+		},
+		agregaFuncion: function(servicios,herramienta) {
+			var fn = function(evento){
+				servicios.herramientaActiva = servicios.herramientas[herramienta];
+			}
+			return fn;
 		}
 	};
 	h.inicializar(servicios,herramientas);

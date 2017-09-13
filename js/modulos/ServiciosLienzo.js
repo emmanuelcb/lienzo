@@ -51,6 +51,7 @@ var ServiciosLienzo = function(contenedor,herramientas) {
 		manejadorRatonPresionado: function(servicios) {
 			var ratonPresionadoFn = function(evento){
 				if(evento.which == 1) {
+					console.log(servicios);
 					servicios.ratonPresionado = true;
 					servicios.herramientaActiva.abajo(servicios,evento);
 				}

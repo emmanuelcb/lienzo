@@ -1,0 +1,1 @@
+var iconos = new ColeccionIconos();

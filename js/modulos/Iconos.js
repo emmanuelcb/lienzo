@@ -2,38 +2,74 @@ var ColeccionIconos = function(){
 	var ci = {
 		inicializar: function() {
 			this.botones = {
-				expandirAbajo:function(width,height){
+				expandirAbajo:function(ancho,alto,porcentaje){
 					var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
 					var grupo = document.createElementNS('http://www.w3.org/2000/svg','g');
+					if(porcentaje < 100) {
+						var redimension = porcentaje/100;
+						var compensacion = (((100-porcentaje)/100)*ancho)/2;
+						console.log([redimension,compensacion]);
+						grupo.setAttributeNS(null,'transform','matrix('+redimension+',0,0,'+redimension+','+compensacion+','+compensacion+')');
+					}
 					var trazo1 = document.createElementNS('http://www.w3.org/2000/svg','path');
 					trazo1.setAttributeNS(null,'style','fill:rgb(230,230,230);');
 					trazo1.setAttributeNS(null,'d',''+
-						'M'+(width*30/100)+','+(height*30/100)+
-						'H'+(width*70/100)+
-						'L'+(width*50/100)+','+(height*60/100)+
-						'L'+(width*30/100)+','+(height*30/100)+'Z');
+						'M'+(ancho*25/100)+','+(alto*25/100)+
+						'H'+(ancho*75/100)+
+						'L'+(ancho*50/100)+','+(alto*60/100)+
+						'L'+(ancho*25/100)+','+(alto*25/100)+'Z');
 					grupo.appendChild(trazo1);
 					var trazo2 = document.createElementNS('http://www.w3.org/2000/svg','path');
 					trazo2.setAttributeNS(null,'style','fill:rgb(190,190,190);');
 					trazo2.setAttributeNS(null,'d',''+
-						'M'+(width*30/100)+','+(height*40/100)+
-						'H'+(width*70/100)+
-						'L'+(width*50/100)+','+(height*70/100)+
-						'L'+(width*30/100)+','+(height*40/100)+'Z');
+						'M'+(ancho*25/100)+','+(alto*40/100)+
+						'H'+(ancho*75/100)+
+						'L'+(ancho*50/100)+','+(alto*75/100)+
+						'L'+(ancho*25/100)+','+(alto*40/100)+'Z');
 					grupo.appendChild(trazo2);
+					svg.appendChild(grupo);
+					return svg;
+				},
+				pluma:function(ancho,alto,porcentaje){
+					var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+					var grupo = document.createElementNS('','g');
+					if(porcentaje < 100) {
+						var redimension = porcentaje/100;
+						var compensacion = (((100-porcentaje)/100)*ancho)/2;
+						console.log([redimension,compensacion]);
+						grupo.setAttributeNS(null,'transform','matrix('+redimension+',0,0,'+redimension+','+compensacion+','+compensacion+')');
+					}
+					var trazo1 = document.createElementNS('','path');
+					trazo1.setAttributeNS(null,'style','fill:rgb(230,230,230)');
+					trazo1.setAttributeNS(null,'d',''+
+						'M'+(ancho*20/100)+','+(alto*80/100)+' '+
+						'L'+(ancho*30/100)+','+(alto*40/100)+' '+
+						'H'+(ancho*45/100)+' '+
+						'L'+(ancho*60/100)+','+(alto*20/100)+' '+
+						'L'+(ancho*80/100)+','+(alto*40/100)+' '+
+						'L'+(ancho*60/100)+','+(alto*55/100)+' '+
+						'V'+(alto*70/100)+' '+
+						'L'+(ancho*20/100)+','+(alto*80/100)+' '+
+						'M'+(ancho*27.5/100)+','+(alto*72.5/100)+' '+
+						'L'+(ancho*55/100)+','+(alto*65/100)+' '+
+						'V'+(alto*50/100)+' '+
+						'L'+(ancho*50/100)+','+(alto*45/100)+' '+
+						'H'+(ancho*35/100)+' '+
+						'L'+(ancho*27.5/100)+','+(alto*72.5/100)+'Z');
+					grupo.appendChild(trazo1);
 					svg.appendChild(grupo);
 					return svg;
 				}
 			};
 		},
-		obtenerSVG: function(coleccion,nombre,width,height) {
-			var svg = this[coleccion][nombre](parseInt(width),parseInt(height));
-			svg.setAttributeNS(null,'width',width);
-			svg.setAttributeNS(null,'height',height);
+		obtenerSVG: function(coleccion,nombre,ancho,alto,porcentaje) {
+			var svg = this[coleccion][nombre](parseInt(ancho),parseInt(alto),parseInt(porcentaje));
+			svg.setAttributeNS(null,'width',ancho);
+			svg.setAttributeNS(null,'height',alto);
 			return svg;
 		},
-		obtenerURL: function(coleccion,nombre,width,height) {
-			var svg = this[coleccion][nombre](parseInt(width),parseInt(height));
+		obtenerURL: function(coleccion,nombre,ancho,alto,porcentaje) {
+			var svg = this[coleccion][nombre](parseInt(ancho),parseInt(alto),parseInt(porcentaje));
 			var serializador = new XMLSerializer();
 			var fuente = serializador.serializeToString(svg);
 			if(!fuente.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/))
