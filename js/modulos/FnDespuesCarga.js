@@ -6,7 +6,7 @@ window.onload = function() {
 		'seleccion':seleccionar.seleccion,
 		'selecciondirecta':seleccionar.seleccionDirecta,
 		'pluma':seleccionar.btnPluma,
-		'plumaeliminar':seleccionar.plumaEliminar
+		'plumaeliminar':seleccionar.btnPlumaEliminar
 	});
 
 	agregarReglaCSS(document.styleSheets[0],'#btnExpandirAbajo','background:url("'+
@@ -23,6 +23,14 @@ window.onload = function() {
 			'pluma',
 			seleccionar.btnPluma.offsetWidth,
 			seleccionar.btnPluma.offsetHeight,
+			60
+		)+'")',1);
+	agregarReglaCSS(document.styleSheets[0],'#btnPlumaEliminar','background:url("'+
+		iconos.obtenerURL(
+			'botones',
+			'plumaEliminar',
+			seleccionar.btnPlumaEliminar.offsetWidth,
+			seleccionar.btnPlumaEliminar.offsetHeight,
 			60
 		)+'")',1);
 };
