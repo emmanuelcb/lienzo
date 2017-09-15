@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<body style="width:100vw;height:100vh;display:block;">
+		<script>
+			function limpiar(s) {
+				if(s=='' || s==null)
+					return 'nada que limpiar';
+				var ns = s;
+				var p = /[A-Z]+/g;
+				var ms = ns.match(p);
+				ms = ms.filter(function(elem, index, self) {
+				    return index == self.indexOf(elem);
+				});
+				for(var i=0; i<ms.length; i++) {
+					var m = ms[i];
+					ns = ns.replace(new RegExp(m,'g'),'\''+m+'\'');
+				}
+
+				p = /[0-9.]+,/g;
+				ms = ns.match(p);
+				ms = ms.filter(function(elem, index, self) {
+				    return index == self.indexOf(elem);
+				});
+				for(var i=0; i<ms.length; i++) {
+					var m = ms[i];
+					ns = ns.replace(new RegExp(m,'g'),'+(ancho*'+m.replace(',','')+'/100)+,');
+				}
+
+				p = /,[0-9.]+/g;
+				ms = ns.match(p);
+				ms = ms.filter(function(elem, index, self) {
+				    return index == self.indexOf(elem);
+				});
+				for(var i=0; i<ms.length; i++) {
+					var m = ms[i];
+					ns = ns.replace(new RegExp(m,'g'),',+(alto*'+m.replace(',','')+'/100)+');
+				}
+
+				p = /[,\s]+/g;
+				ms = ns.match(p);
+				ms = ms.filter(function(elem, index, self) {
+				    return index == self.indexOf(elem);
+				});
+				for(var i=0; i<ms.length; i++) {
+					var m = ms[i];
+					ns = ns.replace(new RegExp(m,'g'),'\''+m+'\'');
+				}
+
+				return ns;
+			}
+		</script>
+		<textarea rows="5" cols="150" id='cadena'></textarea>
+		<br />
+		<button onclick="document.getElementById('salida').innerHTML = limpiar(document.getElementById('cadena').value);">Limpiar</button>
+		<p id="salida"></p>
+	</body>
+</html>

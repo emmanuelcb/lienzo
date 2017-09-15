@@ -3,36 +3,21 @@ window.onload = function() {
 	seleccionar = Selector('id',['body','div','ul','li','svg','path','button']);
 
 	var lienzo = ServiciosLienzo(seleccionar.contenedorLienzo,{
-		'seleccion':seleccionar.seleccion,
-		'selecciondirecta':seleccionar.seleccionDirecta,
+		'seleccion':seleccionar.btnSeleccion,
+		'selecciondirecta':seleccionar.btnSeleccionDirecta,
 		'pluma':seleccionar.btnPluma,
 		'plumaeliminar':seleccionar.btnPlumaEliminar
 	});
 
-	agregarReglaCSS(document.styleSheets[0],'#btnExpandirAbajo','background:url("'+
-		iconos.obtenerURL(
-			'botones',
-			'expandirAbajo',
-			seleccionar.btnExpandirAbajo.offsetWidth,
-			seleccionar.btnExpandirAbajo.offsetHeight,
-			60
-		)+'")',1);
-	agregarReglaCSS(document.styleSheets[0],'#btnPluma','background:url("'+
-		iconos.obtenerURL(
-			'botones',
-			'pluma',
-			seleccionar.btnPluma.offsetWidth,
-			seleccionar.btnPluma.offsetHeight,
-			60
-		)+'")',1);
-	agregarReglaCSS(document.styleSheets[0],'#btnPlumaEliminar','background:url("'+
-		iconos.obtenerURL(
-			'botones',
-			'plumaEliminar',
-			seleccionar.btnPlumaEliminar.offsetWidth,
-			seleccionar.btnPlumaEliminar.offsetHeight,
-			60
-		)+'")',1);
+	var docStyleSheets = document.styleSheets[0];
+	var reglasPorAgregar = ['expandirAbajo','pluma','plumaEliminar','seleccion','seleccionDirecta'];
+
+	for(var i=0; i<reglasPorAgregar.length; i++) {
+		var reglaId = reglasPorAgregar[i];
+		var selector = reglaId.charAt(0).toUpperCase() + reglaId.slice(1);
+		agregarReglaCSS(docStyleSheets,'#btn'+selector,'background:url("'+
+			iconos.obtenerURL('botones',reglaId,seleccionar['btn'+selector].offsetWidth,seleccionar['btn'+selector].offsetHeight,60)+'")',1);
+	}
 };
  
 function agregarReglaCSS(hoja,selector,reglas,indice) {
