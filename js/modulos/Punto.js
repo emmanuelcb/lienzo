@@ -36,7 +36,7 @@ var Punto = function(id,x,y,inicial,trazo,anterior){
 			}
 		},
 		dibujarPunto: function() {
-			var color = 'rgb(30,90,10)';
+			var color = this.trazo.servicios.cPunto;
 			var cuadrado = document.createElementNS('http://www.w3.org/2000/svg','rect');
 			cuadrado.setAttributeNS(null,'x',this.x-this.radio);
 			cuadrado.setAttributeNS(null,'y',this.y-this.radio);
@@ -47,7 +47,7 @@ var Punto = function(id,x,y,inicial,trazo,anterior){
 			this.punto = cuadrado;
 		},
 		dibujarLinea: function() {
-			var color = 'rgb(30,90,10)';
+			var color = this.trazo.servicios.cLinea;
 			var linea = document.createElementNS('http://www.w3.org/2000/svg','path');
 			var atributoD = 'M'+this.anterior.x+','+this.anterior.y+
 				(this.anterior.bezierSig ? (

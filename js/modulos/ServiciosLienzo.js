@@ -1,5 +1,10 @@
 var ServiciosLienzo = function(contenedor,herramientas) {
 	var sl = {
+		cFdLienzo1: 'rgb(130,130,155)',
+		cFdLienzo2: 'rgb(155,155,155)',
+		cTrazo: 'rgb(100,100,100)',
+		cPunto: 'rgb(255,255,255)',
+		cLinea: 'rgb(255,255,255)',
 		validarParametros: function(contenedor,herramientas) {
 			if(contenedor === undefined)
 				throw new Error('Ups!, parece que tu desarrollador la cago, no hay parentElement definido.');
@@ -12,7 +17,7 @@ var ServiciosLienzo = function(contenedor,herramientas) {
 			imagenSVG.setAttributeNS(null,'height',20);
 			var ubicacionesX = [0,10,0,10];
 			var ubicacionesY = [0,0,10,10];
-			var colores = ['rgb(230,230,255)','rgb(255,255,255)','rgb(255,255,255)','rgb(230,230,255)'];
+			var colores = [this.cFdLienzo1,this.cFdLienzo2,this.cFdLienzo2,this.cFdLienzo1];
 			for(var i=0,j=4; i<j; i++) {
 				var cuadrado = document.createElementNS('http://www.w3.org/2000/svg','rect');
 				cuadrado.setAttributeNS(null,'x',ubicacionesX[i]);
@@ -51,7 +56,6 @@ var ServiciosLienzo = function(contenedor,herramientas) {
 		manejadorRatonPresionado: function(servicios) {
 			var ratonPresionadoFn = function(evento){
 				if(evento.which == 1) {
-					console.log(servicios);
 					servicios.ratonPresionado = true;
 					servicios.herramientaActiva.abajo(servicios,evento);
 				}

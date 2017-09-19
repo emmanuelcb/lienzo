@@ -21,7 +21,7 @@ var Trazo = function(id,pos,servicios) {
 		},
 		inactivarPuntos: function() {
 			for(var p in this.puntos) {
-				this.puntos[p].punto.setAttributeNS(null,'fill','rgb(30,90,10)');
+				this.puntos[p].punto.setAttributeNS(null,'fill',this.servicios.cPunto);
 			}
 		},
 		seleccionaPuntos: function(x,y) {
@@ -60,7 +60,7 @@ var Trazo = function(id,pos,servicios) {
 			this.grupoTrazo = grupoTrazo;
 		},
 		trazar: function() {
-			var color = 'rgb(200,200,200)';
+			var color = this.servicios.cTrazo;
 			var trazo = document.createElementNS('http://www.w3.org/2000/svg','path');
 			var cadenaD = this.obtenerD();
 			trazo.setAttributeNS(null,'d',cadenaD);
